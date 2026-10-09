@@ -1,0 +1,12 @@
+# LF for everything bash/python/C reads: CRLF breaks bash scripts and sourced .env values
+*.sh    text eol=lf
+*.env   text eol=lf
+*.py    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.c     text eol=lf
+*.h     text eol=lf
+*.modus binary
+*.jpg   binary
+*.png   binary
+*.pdf   binary

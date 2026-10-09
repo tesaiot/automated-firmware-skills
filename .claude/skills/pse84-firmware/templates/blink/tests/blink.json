@@ -1,0 +1,12 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info", "send": "info", "expect_re": ["^INFO app=blink .*period_ms=500"]},
+    {"name": "LED1 on+off 1", "expect": ["BLINK led1=1", "BLINK led1=0"], "timeout": 1.5, "pause": 0},
+    {"name": "LED1 on+off 2", "expect": ["BLINK led1=1", "BLINK led1=0"], "timeout": 1.5, "pause": 0},
+    {"name": "console alive", "send": "foo", "expect": ["ERR unknown command"]},
+    {"name": "LED1 blinks (look)", "interactive": true, "prompt": "Look at the board: LED1 should blink twice a second - tell Claude", "expect": ["BLINK led1=1", "BLINK led1=0"], "timeout": 5}
+  ]
+}

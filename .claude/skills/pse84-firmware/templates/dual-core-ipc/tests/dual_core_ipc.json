@@ -1,0 +1,22 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info, cm55 ready",  "send": "info",         "expect_re": ["^INFO app=dual-core-ipc .*cm55=1"]},
+    {"name": "cm55 alive",        "send": "ipc?",         "expect_re": ["^IPC ready=1 alive=1 hb_per_s=[1-9]\\d*"]},
+    {"name": "ping 41",           "send": "ping 41",      "expect_re": ["^OK ping arg=41 result=42 rtt_ms=\\d+"]},
+    {"name": "ping 0xFFFFFFFF",   "send": "ping 0xFFFFFFFF", "expect_re": ["^OK ping arg=4294967295 result=0 "]},
+    {"name": "led55 1 on",        "send": "led55 1 on",   "expect": ["OK led1=1 cm55=1 cm33=1"], "pause": 0.8},
+    {"name": "cm33 sees led1",    "send": "led?",         "expect": ["led1=1"]},
+    {"name": "led55 2 on",        "send": "led55 2 on",   "expect": ["OK led2=1 cm55=1 cm33=1"], "pause": 0.8},
+    {"name": "led55 1 off",       "send": "led55 1 off",  "expect": ["OK led1=0 cm55=0 cm33=0"], "pause": 0.8},
+    {"name": "led55 2 off",       "send": "led55 2 off",  "expect": ["OK led2=0 cm55=0 cm33=0"]},
+    {"name": "cm55 rejects led3", "send": "led55 3 on",   "expect": ["ERR cm55 bad arg"]},
+    {"name": "bad action",        "send": "led55 1 blink","expect": ["ERR bad action"]},
+    {"name": "missing args",      "send": "led55",        "expect": ["ERR usage"]},
+    {"name": "unknown cmd",       "send": "foo",          "expect": ["ERR unknown command"]},
+    {"name": "LED1 visible",      "interactive": true, "send": "led55 1 on",
+     "prompt": "Look at the board: LED1 should be ON now (driven by CM55)", "expect": ["OK led1=1"], "timeout": 5}
+  ]
+}

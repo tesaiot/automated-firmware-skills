@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/pse84-firmware/scripts/board_gate.py\" hook",
+            "timeout": 15,
+            "statusMessage": "Board-scope gate (E84 AI Kit vs TESAIoT base board)"
+          }
+        ]
+      }
+    ]
+  }
+}

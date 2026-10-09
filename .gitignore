@@ -1,0 +1,27 @@
+# --- never committed (owner's rule) ---
+# apps/: generated ModusToolbox projects, mtb_shared, .bench (probe serials + COM ports of this PC)
+apps/
+# keepout/: private working files (poster sources etc.)
+keepout/
+# flash dumps of your own boards (backup.sh writes next to the workspace)
+backup/
+
+# --- skill packaging leftovers ---
+*.zip
+
+# --- ModusToolbox / build leftovers if an app is ever created outside apps/ ---
+.mtbqueryapi
+.ninja_log
+build/
+
+# --- Python / editors / OS ---
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- per-user Claude Code settings and handoff notes ---
+.claude/settings.local.json
+CLAUDE.local.md

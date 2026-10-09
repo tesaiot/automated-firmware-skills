@@ -1,0 +1,18 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info",            "send": "info",    "expect_re": ["^INFO app=button-led .*leds=\\d+ btns=\\d+"]},
+    {"name": "button map",      "send": "buttons", "expect_re": ["^BUTTON btn1 name=\\S+ pin=P\\d+\\.\\d+"], "requires_re": "btns=[1-9]"},
+    {"name": "all released",    "send": "btn?",    "expect_re": ["^BTN( btn\\d=0)*$"]},
+    {"name": "all LEDs off",    "send": "led?",    "expect_re": ["^LED( led\\d=0)*$"]},
+    {"name": "hold BTN1",       "interactive": true, "requires_re": "btns=[1-9]", "prompt": "Press and HOLD {btn1} for 2 s, then release",
+     "expect": ["EVT btn1=pressed", "led1=1", "EVT btn1=released"], "timeout": 30},
+    {"name": "hold BTN2",       "interactive": true, "requires_re": "btns=[2-9]", "prompt": "Press and HOLD {btn2} for 2 s, then release",
+     "expect": ["EVT btn2=pressed", "led2=1", "EVT btn2=released"], "timeout": 30},
+    {"name": "hold BTN3",       "interactive": true, "requires_re": "btns=[3-9]", "prompt": "Press and HOLD {btn3} for 2 s, then release",
+     "expect": ["EVT btn3=pressed", "led3=1", "EVT btn3=released"], "timeout": 30},
+    {"name": "LEDs off again",  "send": "led?",    "expect_re": ["^LED( led\\d=0)*$"]}
+  ]
+}

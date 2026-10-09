@@ -1,0 +1,1 @@
+LED1 toggles every 500 ms and prints "BLINK led1=0|1" (1 ms SysTick time base)

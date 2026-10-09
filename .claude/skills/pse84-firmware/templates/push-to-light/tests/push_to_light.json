@@ -1,0 +1,29 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info",            "send": "info",         "expect_re": ["^INFO app=push-to-light .*leds=\\d+ btns=\\d+"]},
+    {"name": "help",            "send": "help",         "expect": ["led <n> on|off|toggle"]},
+    {"name": "led1 on",         "send": "led 1 on",     "expect": ["OK led1=1"], "pause": 0.8, "requires_re": "leds=[1-9]"},
+    {"name": "readback led1=1", "send": "led?",         "expect": ["led1=1"], "requires_re": "leds=[1-9]"},
+    {"name": "led1 off",        "send": "led 1 off",    "expect": ["OK led1=0"], "pause": 0.8, "requires_re": "leds=[1-9]"},
+    {"name": "led1 toggle",     "send": "led 1 toggle", "expect": ["OK led1=1"], "pause": 0.8, "requires_re": "leds=[1-9]"},
+    {"name": "led2 on",         "send": "led 2 on",     "expect": ["OK led2=1"], "pause": 0.8, "requires_re": "leds=[2-9]"},
+    {"name": "readback 1+2",    "send": "led?",         "expect": ["led1=1", "led2=1"], "requires_re": "leds=[2-9]"},
+    {"name": "led2 off",        "send": "led 2 off",    "expect": ["OK led2=0"], "requires_re": "leds=[2-9]"},
+    {"name": "led1 off again",  "send": "led 1 off",    "expect": ["OK led1=0"], "requires_re": "leds=[1-9]"},
+    {"name": "bad led",         "send": "led 9 on",     "expect": ["ERR no led9"]},
+    {"name": "bad action",      "send": "led 1 blink",  "expect": ["ERR bad action"]},
+    {"name": "unknown cmd",     "send": "foo",          "expect": ["ERR unknown command"]},
+    {"name": "buttons released","send": "btn?",         "expect_re": ["^BTN( btn\\d=0)*$"]},
+    {"name": "LED1 off before press", "interactive": true, "requires_re": "btns=[1-9]", "send": "led 1 off",
+     "expect_re": ["^OK led1=0$"]},
+    {"name": "BTN1 press",      "interactive": true, "requires_re": "btns=[1-9]", "prompt": "Press and release {btn1} once",
+     "expect": ["EVT btn1=pressed", "EVT btn1=released"], "timeout": 30},
+    {"name": "BTN2 press",      "interactive": true, "requires_re": "btns=[2-9]", "prompt": "Press and release {btn2}",
+     "expect": ["EVT btn2=pressed", "EVT btn2=released"], "timeout": 30},
+    {"name": "LED1 after press","interactive": true, "requires_re": "btns=[1-9]", "send": "led?",
+     "prompt": "Look at the board: LED1 should be ON now (tell Claude if it is)", "expect_re": ["^LED led1=1( |$)"], "timeout": 5}
+  ]
+}

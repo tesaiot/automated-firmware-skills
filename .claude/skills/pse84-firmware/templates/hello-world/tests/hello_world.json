@@ -1,0 +1,14 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info",          "send": "info", "expect_re": ["^INFO app=hello-world .*period_ms=1000"]},
+    {"name": "hello 1",       "expect_re": ["^hello, world$"], "timeout": 1.5, "pause": 0},
+    {"name": "hello 2",       "expect_re": ["^hello, world$"], "timeout": 1.5, "pause": 0},
+    {"name": "hello 3",       "expect_re": ["^hello, world$"], "timeout": 1.5, "pause": 0},
+    {"name": "hello 4",       "expect_re": ["^hello, world$"], "timeout": 1.5, "pause": 0},
+    {"name": "hello 5",       "expect_re": ["^hello, world$"], "timeout": 1.5, "pause": 0},
+    {"name": "console alive", "send": "foo", "expect": ["ERR unknown command"]}
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "_doc": "Board-scope gate data (scripts/board_gate.py). Each group is a piece of hardware; a board profile lists the groups it has in board.env BOARD_PARTS. A request or app that needs a part of a group the board lacks is BLOCKED. 'keywords' are case-insensitive regexes used on prompts; 'symbols' are regexes searched in app sources (outside board/). Pins: boards/<id>/README.md.",
+  "groups": {
+    "ai-kit": {
+      "name": "PSOC Edge E84 AI Kit (KIT_PSE84_AI) on-board parts",
+      "parts": {
+        "console": {
+          "label": "KitProg3 UART console (SCB2 P6.5/P6.7)"
+        },
+        "sw1": {
+          "label": "user button SW1 (P7.0)"
+        },
+        "leds": {
+          "label": "LED1/LED2 + RGB LED (P10.7, P10.5, P20.4-6)"
+        },
+        "sensors": {
+          "label": "BMI270 / DPS368 / SHT40 on SCB0, BMM350 on I3C"
+        },
+        "radar": {
+          "label": "BGT60TR13C radar (SCB3)"
+        },
+        "mics": {
+          "label": "PDM + analog microphones"
+        },
+        "audio": {
+          "label": "I2S codec + speaker"
+        },
+        "wireless": {
+          "label": "CYW55513 Wi-Fi / Bluetooth"
+        },
+        "display": {
+          "label": "MIPI-DSI display connector + SCB5 display I2C"
+        },
+        "camera": {
+          "label": "DVP / USB camera"
+        },
+        "memory": {
+          "label": "QSPI NOR + octal HyperRAM"
+        }
+      }
+    },
+    "qwa309": {
+      "name": "TESAIoT QWA309 base board (only on board id 'tesaiot')",
+      "parts": {
+        "base-buttons": {
+          "label": "base-board buttons SW4/SW5 (P17.5/P17.7; rev1 silkscreen SW5/SW6)",
+          "keywords": [
+            "\\bSW ?[456]\\b",
+            "base[- ]?board button",
+            "ปุ่ม(บน)?บอร์ด(ฐาน|เสริม)"
+          ],
+          "symbols": []
+        },
+        "pots": {
+          "label": "potentiometers VR1..VR4 (P15.4..P15.7, SAR ch 4..7)",
+          "keywords": [
+            "\\bVR ?[1-4]\\b",
+            "\\bpot(s|entiometers?)?\\b",
+            "\\bknobs?\\b",
+            "trimmer",
+            "โพเทนชิโอ",
+            "ตัวต้านทานปรับค่า",
+            "วอลุ่ม"
+          ],
+          "symbols": [
+            "CYBSP_POT_VR\\d"
+          ]
+        },
+        "led-matrix": {
+          "label": "DFRobot DFR0522 16x8 RGB LED matrix (I2C 0x10 on SCB5)",
+          "keywords": [
+            "led ?matrix",
+            "dfr0522",
+            "16 ?x ?8",
+            "8 ?x ?16",
+            "แอลอีดีเมทริกซ์",
+            "LED เมทริกซ์"
+          ],
+          "symbols": [
+            "DFR0522",
+            "LED_MATRIX"
+          ]
+        },
+        "capsense": {
+          "label": "CapSense buttons BTN0/BTN1 + slider (PSoC 4000T @0x08)",
+          "keywords": [
+            "capsense",
+            "touch ?(button|slider)",
+            "\\bslider\\b",
+            "psoc ?4000",
+            "ปุ่มสัมผัส"
+          ],
+          "symbols": [
+            "CAPSENSE"
+          ]
+        },
+        "optiga": {
+          "label": "OPTIGA Trust M (I2C 0x30 on SCB5)",
+          "keywords": [
+            "optiga",
+            "trust ?m\\b"
+          ],
+          "symbols": [
+            "OPTIGA"
+          ]
+        },
+        "arduino-header": {
+          "label": "Arduino headers D0-D13 / A4-A5 (P15.x, P13.x, P9.x via level shifters)",
+          "keywords": [
+            "arduino",
+            "\bpin ?D(1[0-3]|[0-9])\b|\bD(1[0-3]|[0-9]) ?pin",
+            "header (uart|spi|gpio|pwm)",
+            "\\bSCB ?9\\b",
+            "\\bP1[35][._\\[]\\s*[0-7]"
+          ],
+          "symbols": [
+            "GPIO_PRT13\\b",
+            "GPIO_PRT15\\b",
+            "\\bP1[35]_[0-7]_"
+          ]
+        },
+        "mikrobus": {
+          "label": "mikroBUS sockets x3",
+          "keywords": [
+            "mikro ?bus",
+            "click board"
+          ],
+          "symbols": [
+            "MIKROBUS"
+          ]
+        },
+        "can-rs485": {
+          "label": "CAN (SN65HVD230, P16.2/P16.3) and RS-485",
+          "keywords": [
+            "\\bcan ?(bus|fd)\\b",
+            "canfd",
+            "sn65hvd230",
+            "rs-?485",
+            "modbus"
+          ],
+          "symbols": [
+            "CANFD",
+            "Cy_CANFD"
+          ]
+        },
+        "qwa309": {
+          "label": "the QWA309 base board itself",
+          "keywords": [
+            "qwa ?309",
+            "base ?board",
+            "บอร์ดฐาน",
+            "บอร์ดเสริม"
+          ],
+          "symbols": [
+            "qwa309\\.h"
+          ]
+        }
+      }
+    }
+  },
+  "prompt": {
+    "_doc": "board_gate.py hook: a prompt that names a base-board part AND targets the bare E84 / AI Kit (and not TESAIoT) is blocked. Override for one prompt: include #board-ok.",
+    "e84_only": [
+      "kit[-_ ]?pse84[-_ ]?ai",
+      "\\bai ?kit\\b",
+      "psoc ?edge ?e84",
+      "psoc ?edge",
+      "\\bpse ?84\\b",
+      "\\be84\\b",
+      "pse846"
+    ],
+    "tesaiot": [
+      "tesaiot",
+      "tesa ?aiot",
+      "\\btesa\\b",
+      "dev ?kit"
+    ],
+    "explicit_e84_id": [
+      "kit[-_ ]?pse84[-_ ]?ai\\b"
+    ],
+    "override": "#board-ok"
+  }
+}

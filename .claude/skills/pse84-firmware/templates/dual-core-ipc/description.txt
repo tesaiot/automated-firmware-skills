@@ -1,0 +1,1 @@
+CM33 console + CM55 worker via shared-memory mailbox (ping, LEDs) - two-core demo
