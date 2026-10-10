@@ -44,7 +44,8 @@ TESAIoT_track/                       ← โฟลเดอร์ template (เ�
 
 ## ข้อมูลบอร์ด 2 ระดับ
 
-- **ชนิดบอร์ด** (`boards/<id>/board.env` ใน skill) — เหมือนกันทุกบอร์ดรุ่นเดียวกัน: BSP, overlay, ชิปที่คาดหวัง, ชื่อปุ่ม
+- **ชนิดบอร์ด** (`boards/<id>/board.env` ใน hardware pack: `psoc-e84-ai-kit` = AI Kit เดี่ยว,
+  `qwa309` = บอร์ดฐาน TESAIoT) — เหมือนกันทุกบอร์ดรุ่นเดียวกัน: BSP, overlay, ชิปที่คาดหวัง, ชื่อปุ่ม
 - **บอร์ดที่ต่อกับเครื่องนี้** (`apps/.bench/<id>.env`) — probe serial และ COM port ซึ่งต่างกันทุกเครื่อง
   นักศึกษาแต่ละคนรัน `discover.sh <board>` ครั้งแรกครั้งเดียว ห้ามแก้ค่าเหล่านี้ใน `boards/`
 
@@ -52,7 +53,8 @@ TESAIoT_track/                       ← โฟลเดอร์ template (เ�
 
 ```
 SKILL.md                 คำสั่งสำหรับ Claude (อังกฤษ)
-boards/<id>/             ข้อมูลเฉพาะบอร์ด: board.env (ให้สคริปต์อ่าน), README.md, overlay
+boards/_template/        แม่แบบสำหรับบอร์ดใหม่ (บอร์ดจริงอยู่ใน pack: ../psoc-e84-ai-kit, ../qwa309)
+exec_templates/ func_templates/   component กลาง (execution model, IPC, บริการ) - bsp อยู่ใน pack
 reference/               รายละเอียดแต่ละขั้น, ปัญหาที่เคยเจอและวิธีแก้
 scripts/                 สคริปต์ทุกขั้น (รันด้วย Git Bash)
 templates/<ชื่อ>/        template แอปแบบแบ่ง layer พร้อม test spec: hello-world, blink, push-to-light, button-led,

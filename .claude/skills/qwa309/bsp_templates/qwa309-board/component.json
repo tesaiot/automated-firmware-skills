@@ -1,0 +1,31 @@
+{
+  "id": "qwa309-board",
+  "layer": "bsp",
+  "status": "built",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "QWA309 base-board definitions (board/qwa309.h: pins, SAR map, header UART, I2C addresses) + compile-time board-scope gate; SW4/SW5 run-time pull-ups in ai-kit-board's board.c",
+  "provides": [
+    "qwa309-defs",
+    "base-buttons"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "base-buttons"
+    ]
+  },
+  "claims": [
+    "P17.5",
+    "P17.7"
+  ],
+  "hw_settings": [
+    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)",
+    "DVP camera unplugged or CAM ON/OFF = OFF (camera RESET/PWDN hold P17.5/P17.7 low -> SW4/SW5 read pressed)"
+  ],
+  "verified": "2026-10-03/10 tesaiot: SW4/SW5 pull-up config read back; presses not seen (camera fitted)",
+  "notes": "brought in automatically by board tesaiot (BOARD_COMPONENTS); P17.5 is also the USB-host VBUS enable"
+}

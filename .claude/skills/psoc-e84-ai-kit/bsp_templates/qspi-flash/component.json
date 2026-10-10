@@ -1,0 +1,77 @@
+{
+  "id": "qspi-flash",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "data area (chosen per app: --opt flash_area=...) of the 64 MB S25HS512T QSPI NOR on SMIF0: read/erase(256 KB)/write, XIP read pointer",
+  "api": "board/extflash.h",
+  "provides": [
+    "qspi-flash"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "memory"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "QSPI-DATA-WINDOW"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-serial-flash-readwrite (mtb_serial_memory_*); offsets surveyed 2026-10-10: littlefs CE + emFile NOR config 0x00A00000, serial-flash CE 0x01F80000, OTA CEs use the BSP MCUboot slots, secure-smif-access CE a memory-configurator region",
+  "notes": "SMIF0 also runs XIP for all images: never claim SMIF0 itself; erase/program routines run from RAM; the area is a compile-time define (extflash.h #errors without it)",
+  "options": {
+    "flash_area": {
+      "question": "Which area of the 64 MB QSPI NOR may this app erase/write for data?",
+      "recommended": "fs-10mb",
+      "choices": {
+        "fs-10mb": {
+          "label": "0x00A00000 + 4 MB - Infineon default for file systems (mtb-example-psoc-edge-filesystem-littlefs-freertos FS_STORAGE_START_ADDRESS, emfile FS_ConfigNOR_BM_SPIFI.c FLASH_START_ADDR)",
+          "defines": {
+            "proj_cm33_ns": [
+              "EXTFLASH_DATA_OFFSET=0x00A00000UL",
+              "EXTFLASH_DATA_SIZE=0x00400000UL"
+            ]
+          }
+        },
+        "ce-test-sectors": {
+          "label": "0x01F80000 + 512 KB - the two sectors mtb-example-psoc-edge-serial-flash-readwrite erases (memSize/2 - 2 x eraseSize)",
+          "defines": {
+            "proj_cm33_ns": [
+              "EXTFLASH_DATA_OFFSET=0x01F80000UL",
+              "EXTFLASH_DATA_SIZE=0x00080000UL"
+            ]
+          }
+        },
+        "top-16mb": {
+          "label": "0x03000000 + 16 MB - top quarter of the chip, furthest from the BSP image regions",
+          "defines": {
+            "proj_cm33_ns": [
+              "EXTFLASH_DATA_OFFSET=0x03000000UL",
+              "EXTFLASH_DATA_SIZE=0x01000000UL"
+            ]
+          }
+        }
+      },
+      "custom": {
+        "align": "0x40000",
+        "min_offset": "0x00880000",
+        "max_end": "0x04000000",
+        "why": "256 KB aligned, above the BSP 1.4.0 image regions (end 0x00880000), inside 64 MB",
+        "defines": {
+          "proj_cm33_ns": [
+            "EXTFLASH_DATA_OFFSET={offset}UL",
+            "EXTFLASH_DATA_SIZE={size}UL"
+          ]
+        }
+      }
+    }
+  }
+}

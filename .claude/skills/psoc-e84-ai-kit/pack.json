@@ -1,0 +1,23 @@
+{
+  "_doc": "Hardware pack read by the pse84-firmware engine (scripts/packs.py). kind som = a module that works on its own.",
+  "id": "psoc-e84-ai-kit",
+  "kind": "som",
+  "mcu": "pse84",
+  "group": "ai-kit",
+  "title": "Infineon PSOC Edge E84 AI Kit (KIT_PSE84_AI)",
+  "boards": [
+    "kit-pse84-ai"
+  ],
+  "names": [
+    "kit[-_ ]?pse84[-_ ]?ai",
+    "\\bai ?kit\\b",
+    "psoc ?edge ?e84",
+    "psoc ?edge",
+    "\\bpse ?84\\b",
+    "\\be84\\b",
+    "pse846"
+  ],
+  "explicit_ids": [
+    "(?<![\\w-])kit-pse84-ai(?![\\w-])"
+  ]
+}

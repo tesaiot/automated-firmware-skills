@@ -1,0 +1,57 @@
+{
+  "id": "radio-cyw55513",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "CYW55513 (Murata 2FY) Wi-Fi 6 over SDHC0 SDIO + BT 5.4 HCI UART SCB4: power, connect, scan, BT stack start (FreeRTOS)",
+  "api": "board/radio.h",
+  "provides": [
+    "radio-cyw55513"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "wireless"
+    ]
+  },
+  "exec_models": [
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "wifi-core-freertos-lwip-mbedtls": "mtb://wifi-core-freertos-lwip-mbedtls#latest-v3.X#$$ASSET_REPO$$/wifi-core-freertos-lwip-mbedtls/latest-v3.X"
+    }
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "DEFINES": [
+        "CYBSP_WIFI_CAPABLE"
+      ]
+    }
+  },
+  "claims": [
+    "SDHC0",
+    "SCB4",
+    "P12.0",
+    "P21.0",
+    "P12.1",
+    "P12.2",
+    "P12.4",
+    "P12.5",
+    "P11.4",
+    "P11.6",
+    "P10.0",
+    "P10.1",
+    "P10.2",
+    "P10.3",
+    "P11.0",
+    "P10.4",
+    "P10.6"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-wifi-scan, mtb-example-psoc-edge-btstack-findme (BSP CYBSP_WIFI_SDIO, CYBSP_BT_UART)",
+  "notes": "deps as mtb-example-psoc-edge-wifi-scan (wifi-core v3 brings wifi-connection-manager, WHD, lwIP, mbedTLS); BT needs btstack + btstack-integration (add with the first BT app)"
+}

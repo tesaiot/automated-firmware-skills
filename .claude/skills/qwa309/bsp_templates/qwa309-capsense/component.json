@@ -1,0 +1,24 @@
+{
+  "id": "qwa309-capsense",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "CapSense BTN0/BTN1 + slider: PSoC 4000T EZI2C @0x08 on SCB5, 3-byte read",
+  "provides": [
+    "qwa309-capsense"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb5"
+    ],
+    "parts": [
+      "capsense"
+    ]
+  },
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/capsense/src/i2c_driver/capsense_i2c.c + api/capsense_protocol.h (ASCII or numeric bytes; baseline)",
+  "hw_settings": [
+    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)"
+  ]
+}

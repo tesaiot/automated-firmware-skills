@@ -1,0 +1,22 @@
+{
+  "id": "led",
+  "layer": "func",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "LEDn on/off/toggle/read-back, 1-based, names from board.h",
+  "provides": [
+    "led"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal"
+  ],
+  "verified": "2026-10-10 tesaiot bring-up (push-to-light 15/16 auto + SW1 interactive)"
+}

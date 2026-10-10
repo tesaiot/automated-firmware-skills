@@ -1,0 +1,29 @@
+{
+  "id": "storage-littlefs",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "littlefs on the QSPI NOR (serial-memory) - first choice for storage",
+  "provides": [
+    "storage-littlefs"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "mtb-littlefs": "mtb://mtb-littlefs#latest-v3.X#$$ASSET_REPO$$/mtb-littlefs/latest-v3.X",
+      "serial-memory": "mtb://serial-memory#latest-v3.X#$$ASSET_REPO$$/serial-memory/latest-v3.X"
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-filesystem-littlefs-freertos"
+}

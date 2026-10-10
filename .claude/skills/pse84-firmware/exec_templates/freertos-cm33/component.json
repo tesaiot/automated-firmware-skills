@@ -1,0 +1,43 @@
+{
+  "id": "freertos-cm33",
+  "layer": "exec",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "FreeRTOS 10.6 on CM33_NS: tasks, 1 kHz tick, heap; board_millis() from the RTOS tick",
+  "provides": [
+    "freertos-cm33"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_model": {
+    "cm33_ns": "freertos"
+  },
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "freertos": "mtb://freertos#latest-v10.X#$$ASSET_REPO$$/freertos/latest-v10.X"
+    }
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "COMPONENTS": [
+        "FREERTOS",
+        "RTOS_AWARE"
+      ],
+      "DEFINES": [
+        "CY_RTOS_AWARE"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-imu-bmi270-freertos (FreeRTOSConfig.h: TRUSTZONE 0, MPU 0, FPU 1, TICK 1000)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm33_ns/FreeRTOSConfig.h (heap_3, 7 priorities, stack check 2, MAX_SYSCALL 0x40)",
+  "notes": "needs files/proj_cm33_ns/include/FreeRTOSConfig.h; ai-kit-board owns SysTick for board_millis() - add BOARD_TICK_FROM_RTOS before 'built'; func components then add 'freertos' to exec_models after a test",
+  "claims": [
+    "SysTick"
+  ]
+}

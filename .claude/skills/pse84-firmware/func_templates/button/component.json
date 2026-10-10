@@ -1,0 +1,22 @@
+{
+  "id": "button",
+  "layer": "func",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "debounced buttons (20 ms), press/release events, 1-based",
+  "provides": [
+    "button"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal"
+  ],
+  "verified": "2026-10-10 tesaiot bring-up (push-to-light 15/16 auto + SW1 interactive)"
+}

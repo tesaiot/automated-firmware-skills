@@ -18,5 +18,5 @@
 7. **Smoke test:** `new_app.sh <id> hello-<id> "" hello-world` → build → (ask) flash → test.
 8. **Document** in `boards/<id>/README.md` (copy the kit-pse84-ai structure): connections, user
    I/O table, BSP delta, quirks, and a verification-status line with the date.
-9. Add `BOARD_<ID>` → `BOARD_NAME` in `templates/_common/proj_cm33_ns/board/board.h`, and a row in
+9. Add `BOARD_<ID>` → `BOARD_NAME` in `bsp_templates/ai-kit-board/files/proj_cm33_ns/board/board.h`, and a row in
    SKILL.md's board table.

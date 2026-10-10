@@ -1,0 +1,35 @@
+{
+  "id": "lvgl-ui",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "LVGL 9.x UI on CM55 over display-dsi (all LVGL calls from one GFX task)",
+  "provides": [
+    "lvgl-ui"
+  ],
+  "requires": {
+    "components": [
+      "display-dsi",
+      "freertos-cm55"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm55": {
+      "lvgl": "mtb://lvgl#v9.5.0#$$ASSET_REPO$$/lvgl/v9.5.0"
+    }
+  },
+  "makefile": {
+    "proj_cm55": {
+      "DEFINES": [
+        "USE_KIT_PSE84_AI"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo"
+}

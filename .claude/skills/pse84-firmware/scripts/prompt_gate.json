@@ -1,0 +1,5 @@
+{
+  "_doc": "Prompt hook settings (board_gate.py hook). Part keywords and board names come from each pack's parts.json / pack.json. explicit_ids are case-sensitive (board ids, never the BSP name KIT_PSE84_AI). Prompts longer than max_prompt_chars (agent reports, pasted docs) are not checked.",
+  "override": "#board-ok",
+  "max_prompt_chars": 1500
+}

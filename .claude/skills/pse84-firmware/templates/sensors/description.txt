@@ -1,0 +1,1 @@
+reads SHT40, DPS368, BMI270 (SCB0 I2C) and BMM350 (I3C) and prints them on the KitProg3 UART every 1 s (scope cm33)

@@ -1,0 +1,30 @@
+{
+  "id": "ai-kit-board",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "board.h API on CM33_NS: init + CM55 start, 1 ms tick, LEDs, buttons (incl. QWA309 SW4/SW5 on tesaiot), console UART; qwa309.h = base-board pins + compile-time board-scope gate",
+  "api": "board/board.h, board/bsp_status.h",
+  "provides": [
+    "board-api"
+  ],
+  "requires": {
+    "components": [],
+    "parts": []
+  },
+  "claims": [
+    "SCB2",
+    "P6.5",
+    "P6.7",
+    "P7.0",
+    "P10.5",
+    "P10.7",
+    "P20.4",
+    "P20.5",
+    "P20.6",
+    "SysTick"
+  ],
+  "verified": "2026-10-10 tesaiot: hello-world, blink, push-to-light flashed + tested"
+}

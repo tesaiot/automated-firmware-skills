@@ -1,0 +1,42 @@
+{
+  "id": "camera-usb-uvc",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "kit USB camera (HBVCAM OV7675 0.3 MP, UVC) on J2 via emUSB-Host on CM55 (FreeRTOS) - licence decision pending",
+  "api": "board/camera_uvc.h",
+  "provides": [
+    "camera-usb-uvc"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": [
+      "camera"
+    ]
+  },
+  "exec_models": [
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm55": {
+      "emusb-host": "mtb://emusb-host#latest-v2.X#$$ASSET_REPO$$/emusb-host/latest-v2.X"
+    }
+  },
+  "claims": [
+    "USBHS",
+    "P7.1",
+    "P7.3",
+    "P7.5",
+    "P7.6",
+    "P8.3"
+  ],
+  "hw_settings": [
+    "USB camera plugged into the MCU USB-C J2 (not the KitProg3 J1); LED D11 = host mode"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-ml-deepcraft-deploy-vision proj_cm55/source/usb_camera_task.c",
+  "notes": "emUSB-Host ships under a binary EULA - listed as excluded in docs/components.md; decide the licence before implementing (owner approval). usb-cdc also claims USBHS"
+}

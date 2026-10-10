@@ -1,0 +1,25 @@
+{
+  "id": "sensor-hub",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "periodic sensor sampling (BMI270 10 Hz, DPS368/SHT40 ~2 Hz) -> console lines / IPC",
+  "provides": [
+    "sensor-hub"
+  ],
+  "requires": {
+    "components": [
+      "imu-bmi270",
+      "humidity-sht4x",
+      "pressure-dps368"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_auto_task.c (start-up delays, rate control; check the I2C lock result)"
+}

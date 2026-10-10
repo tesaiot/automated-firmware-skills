@@ -1,0 +1,8 @@
+ai-kit-board
+console
+led
+i2c-scb0
+humidity-sht4x
+pressure-dps368
+imu-bmi270
+mag-bmm350

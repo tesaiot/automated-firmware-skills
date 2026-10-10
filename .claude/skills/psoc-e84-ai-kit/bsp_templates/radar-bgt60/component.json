@@ -1,0 +1,42 @@
+{
+  "id": "radar-bgt60",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "BGT60TR13C 60 GHz radar on SPI SCB3 (P21.4-7), IRQ P20.3, reset P20.7; register set passed in",
+  "api": "board/radar_bgt60.h",
+  "provides": [
+    "radar-bgt60"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "radar"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "sensor-xensiv-bgt60trxx": "mtb://sensor-xensiv-bgt60trxx#latest-v2.X#$$ASSET_REPO$$/sensor-xensiv-bgt60trxx/latest-v2.X"
+    }
+  },
+  "claims": [
+    "SCB3",
+    "P21.4",
+    "P21.5",
+    "P21.6",
+    "P21.7",
+    "P20.3",
+    "P20.7"
+  ],
+  "source": "https://github.com/Infineon/sensor-xensiv-bgt60trxx v2 (xensiv_bgt60trxx_edge.h PSOC Edge iface), https://github.com/Infineon/mtb-example-psoc-edge-ml-deepcraft-deploy-radar",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/kit-pse84-ai/libraries/tesaiot-radar/bento_bgt60trxx_platform.c (bounded SPI wait)",
+  "notes": "bring-up on CM33_NS (console tests); an ML pipeline may later move it to CM55 (same API under proj_cm55)"
+}

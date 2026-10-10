@@ -1,0 +1,50 @@
+{
+  "id": "display-dsi",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "GFXSS MIPI-DSI on J10: Waveshare 4.3\" 800x480 (@0x45) + FT5406 touch (@0x38, J16) via SCB5, on CM55",
+  "api": "board/display.h",
+  "provides": [
+    "display-dsi"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": [
+      "display"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm55": {
+      "display-dsi-waveshare-4-3-lcd": "mtb://display-dsi-waveshare-4-3-lcd#latest-v1.X#$$ASSET_REPO$$/display-dsi-waveshare-4-3-lcd/latest-v1.X",
+      "touch-ctp-ft5406": "mtb://touch-ctp-ft5406#latest-v1.X#$$ASSET_REPO$$/touch-ctp-ft5406/latest-v1.X"
+    }
+  },
+  "makefile": {
+    "proj_cm55": {
+      "DEFINES": [
+        "MTB_DISPLAY_W4P3INCH_RPI",
+        "MTB_CTP_FT5406"
+      ]
+    }
+  },
+  "claims": [
+    "GFXSS",
+    "SCB5"
+  ],
+  "hw_settings": [
+    "AI Kit J16 fitted (TSM-102-01-L-DH-A-P-TR) and wired to the panel: 5V J16.1, SCL J16.2, GND J16.3, SDA J16.4",
+    "power-cycle USB after flashing (debugger reset leaves the display dark)"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo (display_i2c_config.h: USE_KIT_PSE84_AI -> CYBSP_I2C_DISPLAY_CONTROLLER)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/gfxss_config.c + lv_port_indev.c (enable GFXSS clocks on CM33 before CM55 boots)",
+  "notes": "COMPONENTS+=GFXSS goes in the app's common.mk; frame buffers in the BSP gfx_mem region"
+}

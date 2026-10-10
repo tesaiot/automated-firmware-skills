@@ -1,0 +1,31 @@
+{
+  "id": "mic-pdm",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "2x IM73D122 PDM mics on PDM0 (CLK P8.5, DATA P8.6), L=ch2 R=ch3, 16-bit PCM ring buffer",
+  "api": "board/mic_pdm.h",
+  "provides": [
+    "mic-pdm"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "mics"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "PDM0",
+    "P8.5",
+    "P8.6"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-pdm-pcm (Cy_PDM_PCM_* with CYBSP_PDM_config, channel_2/3_config)"
+}

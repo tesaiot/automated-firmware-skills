@@ -1,0 +1,39 @@
+{
+  "id": "freertos-cm55",
+  "layer": "exec",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "FreeRTOS on CM55 (LVGL / ML / radar run as tasks); _BAREMETAL=0 for graphics",
+  "provides": [
+    "freertos-cm55"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "exec_model": {
+    "cm55": "freertos"
+  },
+  "mtb_deps": {
+    "proj_cm55": {
+      "freertos": "mtb://freertos#latest-v10.X#$$ASSET_REPO$$/freertos/latest-v10.X"
+    }
+  },
+  "makefile": {
+    "proj_cm55": {
+      "COMPONENTS": [
+        "FREERTOS",
+        "RTOS_AWARE"
+      ],
+      "DEFINES": [
+        "CY_RTOS_AWARE"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo (proj_cm55 FreeRTOSConfig.h)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/FreeRTOSConfig.h (min stack 512 words, MAX_SYSCALL 0x20)"
+}

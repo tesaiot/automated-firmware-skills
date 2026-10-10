@@ -1,0 +1,15 @@
+{
+  "_doc": "Plausibility limits for the PSOC Edge E84 AI Kit sensors, board lying still on a desk, room 15-35 C (the kit itself runs ~10 C warmer). Field names = TAG.key printed by templates/sensors. Tune with evidence; note the date and board in 'why'.",
+  "fields": {
+    "ENV.t":    {"min": 5,     "max": 55,     "sd_max": 0.3,  "why": "SHT40 temperature; the running kit heats it to ~40 C"},
+    "ENV.rh":   {"min": 5,     "max": 95,     "sd_max": 0.5,  "why": "SHT40 humidity"},
+    "ENV.p":    {"min": 80000, "max": 106000, "sd_max": 15,   "why": "DPS368 pressure in Pa (sea level ~101325, -12 Pa per m altitude)"},
+    "ENV.tp":   {"min": 5,     "max": 60,     "sd_max": 0.3,  "why": "DPS368 temperature (next to the MCU, warmest)"},
+    "IMU.amag": {"min": 950,   "max": 1050,   "sd_max": 5,    "why": "BMI270 |a| at rest = 1 g; outside = moving or wrong range scaling"},
+    "IMU.gx":   {"min": -3000, "max": 3000,   "sd_max": 800,  "why": "BMI270 gyro zero-rate offset at rest (mdps)"},
+    "IMU.gy":   {"min": -3000, "max": 3000,   "sd_max": 800,  "why": "BMI270 gyro zero-rate offset at rest (mdps)"},
+    "IMU.gz":   {"min": -3000, "max": 3000,   "sd_max": 800,  "why": "BMI270 gyro zero-rate offset at rest (mdps)"},
+    "MAG.bmag": {"min": 1000,  "max": 4000000, "sd_max": 3000, "why": "BMM350 |B| in nT; 2026-10-10 tesaiot shows a ~2.5 mT board-fixed offset, so only a wide window until hard-iron calibration exists"},
+    "MAG.t":    {"min": 5,     "max": 60,     "sd_max": 0.3,  "why": "BMM350 die temperature"}
+  }
+}

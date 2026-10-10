@@ -1,0 +1,24 @@
+{
+  "id": "qwa309-led-matrix",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "DFR0522 16x8 RGB LED matrix @0x10 on SCB5 (5-byte commands, shadow buffer)",
+  "provides": [
+    "qwa309-led-matrix"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb5"
+    ],
+    "parts": [
+      "led-matrix"
+    ]
+  },
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/modules/dfr0522_rgb/dfr0522_rgb.c (02 FUNC COLOR X Y; send changed pixels only)",
+  "hw_settings": [
+    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)"
+  ]
+}

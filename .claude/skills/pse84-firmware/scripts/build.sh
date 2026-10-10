@@ -27,7 +27,7 @@ if [ $GETLIBS = 1 ] || [ ! -d "$APPDIR/../mtb_shared" ]; then
 fi
 
 # Board-scope gate: the app's own code (outside board/) must not use parts its board lacks
-# (e.g. QWA309 base-board pins in an app made for the bare AI Kit). board_gate.py, components.json
+# (e.g. QWA309 base-board pins in an app made for the bare AI Kit). board_gate.py, parts.json
 gate="$("$PYTHON" "$SKILL_DIR/scripts/board_gate.py" app "$(winpath "$APPDIR")" 2>&1)"   || { printf '%s
 ' "$gate"; echo "BUILD: BLOCKED (board scope)"; exit 1; }
 info "make build -j8  (log $LOG)"

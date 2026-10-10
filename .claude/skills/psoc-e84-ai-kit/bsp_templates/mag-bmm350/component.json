@@ -1,0 +1,50 @@
+{
+  "id": "mag-bmm350",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "BMM350 magnetometer on I3C (P3.0/P3.1) @0x15, INT P6.4; nT, m°C",
+  "api": "board/mag_bmm350.h",
+  "provides": [
+    "mag-bmm350"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "sensors"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "sensor-orientation-bmm350": "mtb://sensor-orientation-bmm350#latest-v1.X#$$ASSET_REPO$$/sensor-orientation-bmm350/latest-v1.X"
+    }
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "COMPONENTS": [
+        "BMM350_I3C"
+      ],
+      "PREBUILD": [
+        "bash $(SEARCH_sensor-orientation-bmm350)/COMPONENT_BMM350_I3C/bmm350_fix.bash \"$(SEARCH_BMM350_SensorAPI)/bmm350.c\""
+      ]
+    }
+  },
+  "claims": [
+    "I3C",
+    "P3.0",
+    "P3.1",
+    "P6.4"
+  ],
+  "source": "https://github.com/Infineon/sensor-orientation-bmm350 COMPONENT_BMM350_I3C (mtb_bmm350.h; README quick start: Cy_I3C_Init + mtb_bmm350_init_i3c)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_bmm350.c (PURE mode + SETAASA; redo SETAASA after reset)",
+  "notes": "PREBUILD runs the library's bmm350_fix.bash (comments out the Bosch soft-reset line that drops the part to I2C) - it edits BMM350_SensorAPI/bmm350.c in mtb_shared; I2C mode needs rework R220/R223",
+  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); reads + self-test OK; ~2.5 mT board-fixed offset (rotation changes only 12-28 uT) - needs hard-iron calibration"
+}

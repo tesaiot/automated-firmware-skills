@@ -33,6 +33,9 @@ load_board "$BOARD"
 require_vars PROBE_SERIAL EXPECTED_DEVICE EXPECTED_LIFECYCLE OPENOCD_TARGET_CFG
 [ $YES = 1 ] || die "refusing to program without --yes (ask the user first: this erases and reprograms the board)"
 [ -z "$APP_BOARD" ] || [ "$APP_BOARD" = "$BOARD_ID" ] || die "app was created for '$APP_BOARD', not '$BOARD_ID'"
+# hardware settings the app's components need (components.py hw_settings): remind before programming
+hw="$(sed -n "s/^APP_HW_SETTINGS='\(.*\)'$/\1/p" "$APPDIR/pse84-app.env" 2>/dev/null)"
+[ -n "$hw" ] && printf '%s\n' "$hw" | tr '|' '\n' | sed 's/^ *//; s/^/CHECK HW: /'
 
 # 1. image gate
 if [ -n "$HEX" ]; then

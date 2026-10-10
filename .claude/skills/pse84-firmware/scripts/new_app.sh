@@ -9,19 +9,32 @@
 #   --example      start from an Infineon code example instead (list: examples.sh <board>);
 #                  pinned to its newest release for this BSP unless --example-commit is given.
 #                  The example's own code is kept (no layered template on top).
+#   --components a,b   extra components on top of the template's components.txt
+#                  (ids: components.py list; resolved + gated before anything is created)
+#   --scope cm33|dual|cm55   core scope = which cores run app code (components.py scopes).
+#                  Must be one the template lists in scopes.txt; optional when it lists only one.
+#                  dual adds the default IPC template (ipc-mailbox) unless --components has one.
+#   --allow-planned    accept planned components (only while implementing them; never for users)
+#   --opt key=value    component option, e.g. --opt flash_area=fs-10mb (qspi-flash); repeatable.
+#                  A component option left open blocks with ACTION: CHOOSE (ask the user).
 #
 # 1. get the app (pinned hello-world template, or the example via Project Creator)
 # 2. Project Creator: app + base BSP               5. apply overlays (design.modus, extras)
 # 3. optional: replace the BSP from a pinned git   6. regenerate GeneratedSource (configurator CLIs)
-#    source (BSP_SOURCE=git:...), then getlibs     7. copy layered code template, set BOARD define
+#    source (BSP_SOURCE=git:...), then getlibs     7. apply components + app template, BOARD define
 # 4. gate: BSP version + base design.modus hash
 # Writes <app>/pse84-app.env (board, template, versions, hashes) and logs into <app>/logs/.
 
 . "$(dirname "$0")/env.sh"
-POS=(); EXAMPLE=""; EXCOMMIT=""
+POS=(); EXAMPLE=""; EXCOMMIT=""; EXTRA_COMPONENTS=""; SCOPE=""; OPTS=()
+DEFAULT_COMPONENTS="ai-kit-board console led button"   # templates without components.txt
 while [ $# -gt 0 ]; do
   case "$1" in
     --example) EXAMPLE="$2"; shift;; --example-commit) EXCOMMIT="$2"; shift;;
+    --components) EXTRA_COMPONENTS="$2"; shift;;
+    --scope) SCOPE="$2"; shift;;
+    --allow-planned) OPTS+=(--allow-planned);;   # only while developing a planned component
+    --opt) case "$2" in *=*) OPTS+=(--opt "$2");; *) die "--opt needs key=value";; esac; shift;;
     --*) die "unknown option $1";;
     *) POS+=("$1");;
   esac; shift
@@ -38,9 +51,46 @@ require_safe_path "$APPDIR" "app"
 [ "$TPL" = none ] || { [ -d "$SKILL_DIR/templates/$TPL" ] && [ "${TPL#_}" = "$TPL" ]; } \
   || die "no template '$TPL' (have: $(ls "$SKILL_DIR/templates" | grep -v '^_' | tr '\n' ' '))"
 # Board-scope gate: a template may list the parts it needs in requires.txt (ids from
-# boards/components.json); the board must have them (e.g. pots need board id tesaiot)
+# the packs' parts.json); the board must have them (e.g. pots need board id tesaiot)
 if [ "$TPL" != none ] && [ -f "$SKILL_DIR/templates/$TPL/requires.txt" ]; then
   "$PYTHON" "$SKILL_DIR/scripts/board_gate.py" check "$BOARD_ID" $(grep -v '^#' "$SKILL_DIR/templates/$TPL/requires.txt")     || die "template '$TPL' needs parts board '$BOARD_ID' does not have (GATE: BLOCKED above)"
+fi
+# Core-scope gate: which cores run app code (cm33 | dual | cm55). The template lists the scopes
+# its main.c files implement (scopes.txt); the user chooses when there is more than one.
+SCOPE_IDS=""
+if [ "$TPL" != none ]; then
+  T="$SKILL_DIR/templates/$TPL"
+  tpl_scopes="$(grep -v '^#' "$T/scopes.txt" 2>/dev/null | tr '\n' ' ' | xargs)"
+  if [ -z "$SCOPE" ]; then
+    if [ -n "$tpl_scopes" ] && [ "$(echo $tpl_scopes | wc -w)" = 1 ]; then
+      SCOPE="$tpl_scopes"; echo "SCOPE: $SCOPE (the only core scope template '$TPL' supports)"
+    else
+      "$PYTHON" "$SKILL_DIR/scripts/components.py" scopes
+      echo "ACTION: CHOOSE core scope (ask the user): new_app.sh ... --scope <${tpl_scopes// /|}>"
+      die "template '$TPL' supports several core scopes (${tpl_scopes:-any}) - none chosen"
+    fi
+  elif [ -n "$tpl_scopes" ] && ! printf ' %s ' $tpl_scopes | grep -q " $SCOPE "; then
+    die "template '$TPL' implements scope(s) '$tpl_scopes', not '$SCOPE' (its main.c files are for those)"
+  fi
+  [ "$SCOPE" = cm33 ] && [ -d "$T/proj_cm55" ] && die "scope cm33 parks CM55, but template '$TPL' has proj_cm55 code"
+  case "$SCOPE" in dual|cm55) [ -f "$T/proj_cm55/main.c" ] || die "scope $SCOPE needs a proj_cm55/main.c in template '$TPL'";; esac
+  SCOPE_IDS="$("$PYTHON" "$SKILL_DIR/scripts/components.py" scope-ids "$SCOPE" ${EXTRA_COMPONENTS//,/ })" \
+    || die "unknown core scope '$SCOPE' (components.py scopes)"
+  SCOPE_IDS="${SCOPE_IDS//$'\r'/}"
+  echo "SCOPE: $SCOPE -> $SCOPE_IDS"
+elif [ -n "$SCOPE" ]; then
+  die "--scope needs a layered template (not --example / none)"
+fi
+# Components gate (fast, before Project Creator): requires, scope, exec model per core, board parts,
+# options, status
+if [ "$TPL" != none ]; then
+  pre="$(grep -v '^#' "$SKILL_DIR/templates/$TPL/components.txt" 2>/dev/null | tr '
+' ' ')"
+  [ -n "${pre// }" ] || pre="$DEFAULT_COMPONENTS"
+  "$PYTHON" "$SKILL_DIR/scripts/components.py" check "$BOARD_ID" $pre $SCOPE_IDS ${EXTRA_COMPONENTS//,/ } "${OPTS[@]}" \
+    || die "components gate failed for template '$TPL' on board '$BOARD_ID' (COMPONENTS: BLOCKED / ACTION: CHOOSE above)"
+elif [ -n "$EXTRA_COMPONENTS$OPTS" ]; then
+  die "--components / --opt need a layered template (not --example / none)"
 fi
 mkdir -p "$WS/.cache"
 TMPLOG="$WS/.cache/project-creator-$APP.log"
@@ -154,31 +204,28 @@ if [ -n "$BSP_OVERLAY_MODUS$BSP_OVERLAY_EXTRA" ] || [ "${BSP_SOURCE:-vendor}" !=
     >"$APPDIR/logs/device-configurator.log" 2>&1 || die "device-configurator-cli failed (logs/device-configurator.log)"
 fi
 
-# 7. layered source template + board define
+# 7. components (bsp_templates/ func_templates/ exec_templates/) + app template + board define
+APP_COMPONENTS=""; APP_HW_SETTINGS=""; APP_SCOPE="${SCOPE:-none}"; APP_OPTIONS=""
 if [ "$TPL" != none ]; then
-  info "Applying template $TPL"
-  # templates/_common (board/ + func/ layers) first, then the app template on top
-  for T in "$SKILL_DIR/templates/_common" "$SKILL_DIR/templates/$TPL"; do
-    for proj in proj_cm33_s proj_cm33_ns proj_cm55; do
-      [ -d "$T/$proj" ] && cp -r "$T/$proj/." "$APPDIR/$proj/"
-    done
-  done
   T="$SKILL_DIR/templates/$TPL"
+  comps="$(grep -v '^#' "$T/components.txt" 2>/dev/null | tr '\n' ' ')"
+  [ -n "${comps// }" ] || comps="$DEFAULT_COMPONENTS"
+  comps="$comps $SCOPE_IDS"
+  [ -n "$EXTRA_COMPONENTS" ] && comps="$comps ${EXTRA_COMPONENTS//,/ }"
+  info "Applying components: $comps (+ BOARD_COMPONENTS of $BOARD_ID)"
+  out="$("$PYTHON" "$SKILL_DIR/scripts/components.py" apply "$(winpath "$APPDIR")" --board "$BOARD_ID" $comps "${OPTS[@]}" 2>&1)"; rc=$?
+  printf '%s\n' "$out" | grep -v '^APP_COMPONENTS=\|^APP_HW_SETTINGS=\|^APP_SCOPE=\|^APP_OPTIONS='
+  [ $rc = 0 ] || die "components gate failed (COMPONENTS: BLOCKED above) - nothing else applied"
+  APP_COMPONENTS="$(printf '%s\n' "$out" | sed -n 's/^APP_COMPONENTS=//p')"
+  APP_HW_SETTINGS="$(printf '%s\n' "$out" | sed -n 's/^APP_HW_SETTINGS=//p' | tr -d "'")"
+  APP_SCOPE="$(printf '%s\n' "$out" | sed -n 's/^APP_SCOPE=//p')"
+  APP_OPTIONS="$(printf '%s\n' "$out" | sed -n 's/^APP_OPTIONS=//p')"
+  info "Applying template $TPL (application layer)"
+  for proj in proj_cm33_s proj_cm33_ns proj_cm55; do
+    [ -d "$T/$proj" ] && cp -r "$T/$proj/." "$APPDIR/$proj/"
+  done
   [ -d "$T/tests" ] && cp -r "$T/tests" "$APPDIR/"
   [ -f "$T/README.md" ] && cp "$T/README.md" "$APPDIR/README-app.md"
-  # shared/ = headers common to both cores (e.g. the CM33<->CM55 mailbox contract)
-  if [ -d "$T/shared" ]; then
-    mkdir -p "$APPDIR/shared" && cp -r "$T/shared/." "$APPDIR/shared/"
-    for proj in proj_cm33_ns proj_cm55; do
-      mk="$APPDIR/$proj/Makefile"
-      if grep -q '^INCLUDES+=' "$mk"; then
-        sed -i "0,/^INCLUDES+=/s//INCLUDES+=..\/shared /" "$mk"
-      else
-        echo "INCLUDES+=../shared" >>"$mk"
-      fi
-      grep -q '^INCLUDES+=.*\.\./shared' "$mk" || die "could not add ../shared to $mk"
-    done
-  fi
 fi
 for proj in proj_cm33_ns proj_cm55; do
   mk="$APPDIR/$proj/Makefile"; [ -f "$mk" ] || continue   # examples may have other projects
@@ -195,6 +242,10 @@ cat >"$APPDIR/pse84-app.env" <<EOF
 APP_BOARD=$BOARD_ID
 APP_BOARD_DEFINE=$BOARD_DEFINE
 APP_TEMPLATE=$TPL
+APP_COMPONENTS=${APP_COMPONENTS:-none}
+APP_HW_SETTINGS='${APP_HW_SETTINGS}'
+APP_SCOPE=${APP_SCOPE:-none}
+APP_OPTIONS='${APP_OPTIONS}'
 APP_EXAMPLE=${EXAMPLE:-none}
 APP_BSP=$BSP_ID ${bspver:-?} ($BSP_DIR)
 APP_BSP_SOURCE=${BSP_SOURCE:-vendor}

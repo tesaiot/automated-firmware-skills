@@ -1,0 +1,22 @@
+{
+  "id": "console",
+  "layer": "func",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "UART line console: command table, help, 'ERR unknown command' protocol",
+  "provides": [
+    "console"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal"
+  ],
+  "verified": "2026-10-10 tesaiot bring-up (push-to-light 15/16 auto + SW1 interactive)"
+}

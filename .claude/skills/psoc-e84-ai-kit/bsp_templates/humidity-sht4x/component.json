@@ -1,0 +1,34 @@
+{
+  "id": "humidity-sht4x",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "SHT40 temperature + humidity @0x44 on SCB0 (blocking 2-9 ms); m°C, m%RH",
+  "api": "board/humid_sht4x.h",
+  "provides": [
+    "humidity-sht4x"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb0"
+    ],
+    "parts": [
+      "sensors"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "sensor-humidity-sht4x": "mtb://sensor-humidity-sht4x#latest-v1.X#$$ASSET_REPO$$/sensor-humidity-sht4x/latest-v1.X"
+    }
+  },
+  "claims": [],
+  "source": "https://github.com/Infineon/sensor-humidity-sht4x (mtb_sht4x.h)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_sht40.c (0xFD measure, CRC-8 0x31)",
+  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); t=39.9C rh=47.0% (board warm, MCU running)"
+}

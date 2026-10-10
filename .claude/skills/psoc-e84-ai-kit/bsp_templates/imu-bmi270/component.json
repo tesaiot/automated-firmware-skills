@@ -1,0 +1,38 @@
+{
+  "id": "imu-bmi270",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "BMI270 6-axis IMU @0x68 on SCB0, INT1 P7.7 / INT2 P6.6; mg, mdps, m°C",
+  "api": "board/imu_bmi270.h",
+  "provides": [
+    "imu-bmi270"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb0"
+    ],
+    "parts": [
+      "sensors"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "sensor-motion-bmi270": "mtb://sensor-motion-bmi270#latest-v1.X#$$ASSET_REPO$$/sensor-motion-bmi270/latest-v1.X"
+    }
+  },
+  "claims": [
+    "P7.7",
+    "P6.6"
+  ],
+  "source": "https://github.com/Infineon/sensor-motion-bmi270 (mtb_bmi270.h), https://github.com/Infineon/mtb-example-psoc-edge-imu-bmi270-freertos",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_bmi270.c (init sequence; accel LSB/g must follow the range)",
+  "notes": "address 0x69 needs rework (remove R86, fit R85)",
+  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); |a|=992 mg at rest, self-test OK (one earlier self-test returned ERR_NODEV while the board was handled)"
+}

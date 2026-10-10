@@ -1,0 +1,119 @@
+{
+  "_doc": "Parts of this pack (group qwa309): keywords = prompt regexes, symbols = app-source regexes. Board-scope gate: scripts/board_gate.py.",
+  "name": "TESAIoT QWA309 base board (only on board id 'tesaiot')",
+  "parts": {
+    "base-buttons": {
+      "label": "base-board buttons SW4/SW5 (P17.5/P17.7; rev1 silkscreen SW5/SW6)",
+      "keywords": [
+        "\\bSW ?[456]\\b",
+        "base[- ]?board button",
+        "ปุ่ม(บน)?บอร์ด(ฐาน|เสริม)"
+      ],
+      "symbols": []
+    },
+    "pots": {
+      "label": "potentiometers VR1..VR4 (P15.4..P15.7, SAR ch 4..7)",
+      "keywords": [
+        "\\bVR ?[1-4]\\b",
+        "\\bpot(s|entiometers?)?\\b",
+        "\\bknobs?\\b",
+        "trimmer",
+        "โพเทนชิโอ",
+        "ตัวต้านทานปรับค่า",
+        "วอลุ่ม"
+      ],
+      "symbols": [
+        "CYBSP_POT_VR\\d"
+      ]
+    },
+    "led-matrix": {
+      "label": "DFRobot DFR0522 16x8 RGB LED matrix (I2C 0x10 on SCB5)",
+      "keywords": [
+        "led ?matrix",
+        "dfr0522",
+        "16 ?x ?8",
+        "8 ?x ?16",
+        "แอลอีดีเมทริกซ์",
+        "LED เมทริกซ์"
+      ],
+      "symbols": [
+        "DFR0522",
+        "LED_MATRIX"
+      ]
+    },
+    "capsense": {
+      "label": "CapSense buttons BTN0/BTN1 + slider (PSoC 4000T @0x08)",
+      "keywords": [
+        "capsense",
+        "touch ?(button|slider)",
+        "\\bslider\\b",
+        "psoc ?4000",
+        "ปุ่มสัมผัส"
+      ],
+      "symbols": [
+        "CAPSENSE"
+      ]
+    },
+    "optiga": {
+      "label": "OPTIGA Trust M (I2C 0x30 on SCB5)",
+      "keywords": [
+        "optiga",
+        "trust ?m\\b"
+      ],
+      "symbols": [
+        "OPTIGA"
+      ]
+    },
+    "arduino-header": {
+      "label": "Arduino headers D0-D13 / A4-A5 (P15.x, P13.x, P9.x via level shifters)",
+      "keywords": [
+        "arduino",
+        "\bpin ?D(1[0-3]|[0-9])\b|\bD(1[0-3]|[0-9]) ?pin",
+        "header (uart|spi|gpio|pwm)",
+        "\\bSCB ?9\\b",
+        "\\bP1[35][._\\[]\\s*[0-7]"
+      ],
+      "symbols": [
+        "GPIO_PRT13\\b",
+        "GPIO_PRT15\\b",
+        "\\bP1[35]_[0-7]_"
+      ]
+    },
+    "mikrobus": {
+      "label": "mikroBUS sockets x3",
+      "keywords": [
+        "mikro ?bus",
+        "click board"
+      ],
+      "symbols": [
+        "MIKROBUS"
+      ]
+    },
+    "can-rs485": {
+      "label": "CAN (SN65HVD230, P16.2/P16.3) and RS-485",
+      "keywords": [
+        "\\bcan ?(bus|fd)\\b",
+        "canfd",
+        "sn65hvd230",
+        "rs-?485",
+        "modbus"
+      ],
+      "symbols": [
+        "CANFD",
+        "Cy_CANFD"
+      ]
+    },
+    "qwa309": {
+      "label": "the QWA309 base board itself",
+      "keywords": [
+        "qwa ?309",
+        "base ?board",
+        "บอร์ดฐาน",
+        "บอร์ดเสริม"
+      ],
+      "symbols": [
+        "qwa309\\.h"
+      ]
+    }
+  }
+}

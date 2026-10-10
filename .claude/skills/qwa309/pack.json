@@ -1,0 +1,17 @@
+{
+  "_doc": "Hardware pack read by the pse84-firmware engine. kind baseboard = adds parts to a SoM; its parts are gated off for boards without it.",
+  "id": "qwa309",
+  "kind": "baseboard",
+  "som": "psoc-e84-ai-kit",
+  "group": "qwa309",
+  "title": "TESAIoT QWA309 base board (TESAIoT Dev Kit = AI Kit + QWA309)",
+  "boards": [
+    "tesaiot"
+  ],
+  "names": [
+    "tesaiot",
+    "tesa ?aiot",
+    "\\btesa\\b",
+    "dev ?kit"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "ml-deepcraft",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "DEEPCRAFT model on CM55 + Ethos-U55 (ml-middleware / TFLM)",
+  "provides": [
+    "ml-deepcraft"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm55": {
+      "ml-middleware": "mtb://ml-middleware#latest-v3.X#$$ASSET_REPO$$/ml-middleware/latest-v3.X"
+    }
+  },
+  "makefile": {
+    "proj_cm55": {
+      "COMPONENTS": [
+        "U55",
+        "ML_TFLM",
+        "ML_INT8x8",
+        "CMSIS_DSP"
+      ],
+      "DEFINES": [
+        "TF_LITE_STATIC_MEMORY"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-ml-deepcraft-deploy-motion",
+  "notes": "GCC 14.2 fails in RELEASE (Helium CMSIS-DSP) - build Debug; model sources come from DEEPCRAFT Studio (SDK models are 'All Rights Reserved' - do not reuse)"
+}

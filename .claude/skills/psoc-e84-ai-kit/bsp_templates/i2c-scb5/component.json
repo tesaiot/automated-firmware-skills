@@ -1,0 +1,30 @@
+{
+  "id": "i2c-scb5",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "3.3 V I2C SCB5 P17.0/P17.1 (DSI J10, touch J16, QWIIC J7; QWA309 parts on tesaiot) - one owner core or scb5-lock",
+  "api": "board/i2c_scb5.h",
+  "provides": [
+    "i2c-scb5"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "SCB5",
+    "P17.0",
+    "P17.1"
+  ],
+  "source": "BSP CYBSP_I2C_CAM_CONTROLLER = CYBSP_I2C_DISPLAY_CONTROLLER (SCB5)",
+  "notes": "display-dsi (CM55) also claims SCB5; on tesaiot the QWA309 CS select switch must be on for base-board parts"
+}

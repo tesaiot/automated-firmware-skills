@@ -1,0 +1,33 @@
+{
+  "id": "led-rgb-pwm",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "RGB LED3 colour via TCPWM0 PWM (P20.6 R / P20.4 G / P20.5 B)",
+  "api": "board/rgb_pwm.h",
+  "provides": [
+    "led-rgb-pwm"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "leds"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "TCPWM0-RGB",
+    "P20.4",
+    "P20.5",
+    "P20.6"
+  ],
+  "source": "BSP CYBSP_PWM_LED_CTRL (TCPWM0); https://github.com/Infineon/mtb-example-psoc-edge-pwm-square-wave",
+  "notes": "blocked by the claims gate while ai-kit-board owns P20.4-6 as GPIO LEDs; needs a BOARD_RGB_PWM switch in ai-kit-board"
+}

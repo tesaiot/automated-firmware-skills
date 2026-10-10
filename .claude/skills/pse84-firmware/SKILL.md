@@ -1,6 +1,6 @@
 ---
 name: pse84-firmware
-description: End-to-end firmware workflow for Infineon PSOC Edge E84 (PSE84) boards - TESAIoT (TESA AIoT E84) DevKit and Infineon KIT_PSE84_AI - with native ModusToolbox and VS Code (ModusToolbox extension) on Windows - check dev tools and folder paths, discover the KitProg3 board, create a Project Creator app with a board BSP overlay, write layered code (board -> func -> main), open it in VS Code, build, flash with identity/life-cycle gates via OpenOCD, run automated UART tests, bring-up demos (hello-world, blink, push-to-light), list and start from Infineon ModusToolbox code examples, and clean the template folder. Use when asked to create, build, flash (แฟลช) or test PSOC Edge / PSE84 / E84 firmware (บอร์ด PSOC Edge), list or start from ModusToolbox examples for E84, port an app to another E84 board, add an E84 board profile, or when the user asks how to use this skill / what commands exist (ขอวิธีใช้, มีคำสั่งอะไรบ้าง, help). Not for PSoC 6 or other MCU families.
+description: End-to-end firmware workflow engine for Infineon PSOC Edge E84 (PSE84) boards described by hardware packs (psoc-e84-ai-kit SoM, qwa309 base board = TESAIoT DevKit) - with native ModusToolbox and VS Code (ModusToolbox extension) on Windows - check dev tools and folder paths, discover the KitProg3 board, create a Project Creator app with a board BSP overlay, write layered code (board -> func -> main), open it in VS Code, build, flash with identity/life-cycle gates via OpenOCD, run automated UART tests, bring-up demos (hello-world, blink, push-to-light), list and start from Infineon ModusToolbox code examples, and clean the template folder. Use when asked to create, build, flash (แฟลช) or test PSOC Edge / PSE84 / E84 firmware (บอร์ด PSOC Edge), list or start from ModusToolbox examples for E84, port an app to another E84 board, add an E84 board profile, or when the user asks how to use this skill / what commands exist (ขอวิธีใช้, มีคำสั่งอะไรบ้าง, help). Not for PSoC 6 or other MCU families.
 ---
 
 # PSOC Edge E84 firmware workflow
@@ -14,6 +14,21 @@ gate passed. Each stage has a script in `scripts/` and details in `reference/`.
 check_tools  discover (board)      board/     build.sh   flash.sh   serial_test  clean.sh
              examples / new_app    func/ main
 ```
+
+## Approach - bottom-up, components, no TESAIoT SDK builds
+
+Build firmware **bottom-up**: bring-up → bsp components → exec model / IPC → func components →
+a thin app layer, each layer proven on the board (gates + tests) before the next goes on top.
+Your job is to **customize templates into components and integrate them** (reference/components.md):
+reuse a component, else write one, `components.py check` it, wire it in the app template, build,
+flash, test.
+
+**Never use the TESAIoT SDK to build firmware**: no bento templates, MicroPython firmware,
+SDK BSP 1.2.0, SDK Makefiles/libraries or ModusToolbox 3.6 flow, and never add it as a
+dependency. That SDK is top-down (application-first) - a different concept. You MAY read its
+source/docs as a guideline when writing a component: rewrite the code into bsp/exec/func layers
+on vendor BSP `KIT_PSE84_AI` 1.4.0 + MTB 3.9, put the SDK path in the component's `source` field,
+keep its licence terms, and take pins only from `boards/<id>/README.md`.
 
 ## Help menu (answer this first when asked how to use the skill)
 
@@ -41,62 +56,87 @@ Backups (`backup.sh`) go to `$PSE84_BACKUP_DIR` = the workspace's parent `/backu
 Installing from a copy of just `pse84-firmware/`: put it in one of the two `.claude/skills`
 places, keep LF line endings (`.gitattributes` enforces it in git), then Stage 1.
 
-## Board type vs bench instance
+## Hardware packs, board type vs bench instance
 
-- **Board type** (`boards/<id>/`, part of the skill, same for every copy of that board):
-  `board.env` (BSP id/version/base hash, overlay, `BOARD_DEFINE`, `BTN_LABELS`, expected device +
-  life cycle, OpenOCD target cfg, quirks), `README.md` (pins, BSP delta, verification log), overlays.
+This skill is the **engine** (scripts, exec/func components, app templates). Hardware lives in
+**packs** - sibling skill folders with a `pack.json`, found by `scripts/packs.py` (`python
+"$SKILL/scripts/packs.py"` lists them):
+
+| Pack | Kind | Boards | Holds |
+| --- | --- | --- | --- |
+| `psoc-e84-ai-kit` | som | `kit-pse84-ai` | AI Kit on its own: pins, on-board parts, bsp components (`ai-kit-board`, `cm55-board`, sensors, radar, display) |
+| `qwa309` | baseboard (som `psoc-e84-ai-kit`) | `tesaiot` | QWA309 parts, pin conflicts, switch settings, bsp components (`qwa309-board`, pots, LED matrix, CapSense, CAN) |
+
+Read the pack's `SKILL.md` + `boards/<id>/README.md` before writing hardware code - they are the only
+pin source. A new SoM or base board = a new pack folder (copy one, edit `pack.json`/`parts.json`,
+add `boards/<id>/`); the engine needs no change. Generic exec/func components stay here.
+
+- **Board type** (`<pack>/boards/<id>/`, same for every copy of that board): `board.env` (BSP
+  id/version/base hash, overlay, `BOARD_DEFINE`, `BTN_LABELS`, `BOARD_PARTS` = hardware groups,
+  `BOARD_COMPONENTS` = components always applied, expected device + life cycle, OpenOCD cfg),
+  `README.md` (pins, quirks, verification log), overlays.
 - **Bench instance** (`<workspace>/.bench/<id>.env`, per PC + board, written by `discover.sh`):
   `PROBE_SERIAL`, `CONSOLE_PORT`. Override with env `PSE84_PROBE_SERIAL` / `PSE84_CONSOLE`.
-  Never write a probe serial or COM port into `boards/`.
+  Never write a probe serial or COM port into a pack.
 
-| id | board | base BSP | status |
-| --- | --- | --- | --- |
-| `kit-pse84-ai` | PSOC Edge E84 AI Kit, on-board I/O only | `KIT_PSE84_AI` 1.4.0, no overlay | verified on HW |
-| `tesaiot` | TESAIoT DevKit = AI Kit + QWA309 base board (`BOARD_EXTENDS=kit-pse84-ai`, adds SW4/SW5) | inherited | AI-Kit I/O verified; SW4/SW5 blocked by camera |
+`BOARD_EXTENDS=<parent>` loads the parent profile first (any pack); the child sets only what differs.
+C code sees only `-DBOARD_<ID>`; `board/board.h` maps it to names and extras (`BOARD_HAS_QWA309`).
+Unknown board → `boards/_template/README.md` (here). Empty profile values make scripts stop with a
+message naming the missing variable - fill them, don't guess. Use the **silkscreen name** with
+users (`BTN_LABELS`), never the macro name; say which board a button is on.
 
-`BOARD_EXTENDS=<parent>` in `board.env` loads the parent profile first; the child sets only what
-differs (`BOARD_ID`, `BOARD_DEFINE`, `BTN_LABELS`, extras). C code sees only `-DBOARD_<ID>`;
-`board/board.h` maps it to names and extras (e.g. `BOARD_HAS_QWA309`).
-
-Unknown board → `boards/_template/README.md`. Empty profile values make scripts stop with a
-message naming the missing variable - fill them, don't guess silently.
-
-## Hardware quick reference - switches and LEDs
-
-Use the **silkscreen name** when talking to a user (`BTN_LABELS`), never the macro name.
-Polarity always from the BSP: `CYBSP_LED_STATE_ON` (1 on all three), `CYBSP_BTN_PRESSED` (0).
-
-| Board | Switch (silkscreen → pin) | LEDs (→ pin) |
-| --- | --- | --- |
-| KIT_PSE84_AI (on-board) | **SW1** = user button = `CYBSP_USER_BTN1` (`CYBSP_SW1`) P7[0]; SW2 = RESET. Verified on our kit 2026-10-03 - the TESAIoT SDK docs call the user button "SW2": trust the silkscreen of the board in front of you | LED1 P10[7], LED2 P10[5] (no TCPWM route), RGB red/blue/green P20[6]/P20[5]/P20[4] = `CYBSP_USER_LED3/4/5` (TCPWM0 grp1 lines 265/264/263 → hardware dimming) |
-| QWA309 base board (TESAIoT) | **SW4** P17.5, **SW5** P17.7 - not in the BSP: configure at run time (`Cy_GPIO_Pin_FastInit(..., CY_GPIO_DM_PULLUP, 1, HSIOM_SEL_GPIO)`), active low, debounce ≥50 ms. Older docs call them SW9/SW10 or SW5/SW6. **P17.5 is also the USB-host VBUS enable** (buttons and USB joystick are exclusive) and both nets are the DVP camera RESET/PWDN lines: **with the camera plugged in they read 0 permanently** (seen 2026-10-03) - unplug the camera to use SW4/SW5. **QWA309 has a CS select switch that enables its I2C**: with it selected the base-board buttons and CapSense work; without it the TESAIoT base firmware prints `PSOC,ERR,<ms>,I2C,START-W,...` every 100 ms and sees no presses (reported by the lab, 2026-10-03). Check that switch first when base-board I/O is dead. CapSense BTN0/BTN1 + slider = PSoC 4000T @0x08 on the CM55-owned display/touch I2C (P17.0/P17.1) - not GPIO. | No discrete GPIO LEDs. DFR0522 16×8 RGB matrix @0x10 on the header I2C (SCB5, shared with display/touch, owned by CM55) |
-
-QWA309 extras for later groups: pots VR1..VR4 = P15.4..P15.7 (SAR GPIO ch 4..7, knob map
-{5,4,6,7} - VR1/VR2 traces swapped), Arduino D2..D9 on P13.x/P15.2-3, header PWM P13.3 (+P13.4
-complement), header UART SCB9 P15.0 RX / P15.1 TX, header SPI P9.0-P9.3. Full table with notes:
-`boards/tesaiot/README.md`. Source: TESAIoT SDK (schematic QWA309 V3_P1) - **not** the "rev1
-pinout" image in the repo's `images/`, which has wrong pins (cross-check in the repo's
-`docs/hardware/`). Add-on boards may carry their own "SW1"; always say which board a button is on.
-
-## Board-scope gate - bare E84 AI Kit vs TESAIoT base board
+## Board-scope, pin-claim and hardware-setting gates
 
 The bare **PSOC Edge E84 AI Kit** (`kit-pse84-ai`) cannot reach the **QWA309 base-board** parts of
 the TESAIoT Dev Kit: SW4/SW5, pots VR1..VR4, LED matrix, CapSense, OPTIGA, Arduino/mikroBUS headers,
 CAN/RS-485. Only board id `tesaiot` has them (`BOARD_PARTS` in `board.env`; parts, keywords and
-source symbols in `boards/components.json`). Five checks enforce it - never work around one:
+source symbols in each pack's `parts.json`). Five checks enforce it - never work around one:
 
 | Where | What | Result |
 | --- | --- | --- |
-| prompt (project hook `.claude/settings.json` → `board_gate.py hook`) | request names a base-board part **and** targets the bare E84 / AI Kit / `kit-pse84-ai`, not TESAIoT | prompt blocked with the reason (EN + TH); `#board-ok` in the prompt skips it for discussion |
+| prompt (project hook `.claude/settings.json` → `board_gate.py hook`) | request names a base-board part **and** targets the bare E84 / AI Kit / `kit-pse84-ai`, not TESAIoT | prompt blocked with the reason (EN + TH); `#board-ok` skips it for discussion. Only the board id `kit-pse84-ai` counts as explicit (not the BSP name `KIT_PSE84_AI`); messages over 1500 chars (agent reports, pasted docs) are not checked |
 | before writing code | `python "$SKILL/scripts/board_gate.py" check <board> <parts or words>` | `GATE: PASS` / `GATE: BLOCKED` + `ACTION: CHOOSE` |
 | `new_app.sh` | template's `requires.txt` (part ids) vs the board | stops before Project Creator |
 | `build.sh` | `board_gate.py app <app>` scans app code outside `board/` (e.g. `GPIO_PRT15`) | `BUILD: BLOCKED (board scope)` |
 | compile | `board/qwa309.h` (`#error` unless `BOARD_HAS_QWA309`) - include it from every base-board driver | `BUILD: BLOCKED (board scope, compile time)` |
 
-On BLOCKED: tell the user which part needs the base board and offer to target `tesaiot` (or drop
-the part). Don't switch the board id on your own, and don't edit `BOARD_PARTS` to get past the gate.
-`board_gate.py list <board>` shows what a board has.
+Two more component rules (`components.py check`, also run by `new_app.sh`):
+- **Claims:** components declare the pins/peripherals they `claim`; two claimers of one resource are
+  BLOCKED unless a selected component `arbitrates` it (`scb5-lock` for SCB5). A component shipped by
+  a pack is BLOCKED on a board without that pack.
+- **Hardware settings:** components list `hw_settings` (switches, jumpers, accessories). They print
+  as `ACTION: JUMPER`, are stored in `APP_HW_SETTINGS` and shown again by `flash.sh` as `CHECK HW:`.
+  Relay them and get the user's OK before tests that depend on them.
+
+## Core-scope and option gates (ask the user, never pick silently)
+
+**Core scope** = which cores run application code. Exactly one per app; `new_app.sh --scope`:
+
+| Scope | Exec component | CM33_NS job | CM55 job | Status |
+| --- | --- | --- | --- | --- |
+| `cm33` | `baremetal-cm33` | everything: init, console UART, sensors/peripherals, logic (super-loop) | booted, parked in the vendor idle loop | verified |
+| `dual` | `baremetal-dual` + an **IPC template** (`ipc-mailbox` default; `ipc-pipes` planned) | init, console, the peripherals it claims, boots CM55, IPC client | compute (filters, DSP, ML, graphics) + its own claimed peripherals, IPC worker, no printf | built |
+| `cm55` | `baremetal-cm55` | boot shim only (clocks CM55 needs, start CM55, sleep) | everything incl. console | planned |
+
+- Each template lists the scopes its `main.c` files implement in `scopes.txt`; one entry = used
+  automatically (`SCOPE: cm33 (the only ...)`), several = `new_app.sh` stops with
+  `ACTION: CHOOSE core scope` - **ask the user** with the job table above, then pass `--scope`.
+- `components.py` BLOCKS: no scope, two scopes, CM55 code under `cm33`, `dual` without an IPC
+  template, CM33_NS components other than the boot shim under `cm55`. `components.py scopes` prints
+  the table. Every peripheral still has one owner core (`claims`).
+
+**Component options:** a component may need a choice the user must make (`"options"` in its
+manifest). Missing → `COMPONENTS: BLOCKED ... needs option <key>` + `ACTION: CHOOSE <key> ...` with
+the choices (recommended one marked). Ask, then `new_app.sh ... --opt <key>=<choice>`; the choice
+becomes Makefile `DEFINES` and `APP_OPTIONS` in `pse84-app.env`. Example: `qspi-flash` needs
+`flash_area` - `fs-10mb` (0x00A00000 + 4 MB, Infineon's file-system default; recommended),
+`ce-test-sectors` (0x01F80000 + 512 KB), `top-16mb` (0x03000000 + 16 MB) or
+`custom:<offset>,<size>` (256 KB aligned, >= 0x00880000, inside 64 MB); `extflash.h` `#error`s
+without it.
+
+On BLOCKED: tell the user which part needs which pack/board and offer a board that has it (or drop
+the part). Don't switch the board id on your own, and don't edit `BOARD_PARTS`, `claims` or a
+pack to get past a gate. `board_gate.py list <board>` shows what a board has.
 
 ## Stage 1 - Tools and folder paths
 
@@ -127,7 +167,7 @@ needing admin rights yourself. **Gate:** `missing/bad=0`; report every WARN (ref
    - **Gate:** `IDENTITY: PASS` + `Saved ...`. On FAIL stop and report (wrong board/probe, probe
      busy in another tool, locked chip). Re-run after changing board or USB port.
    - No board yet? Skip to step 2 - creating and building need no hardware.
-2. **Create the app:** `bash "$SKILL/scripts/new_app.sh" <board-id> <app-name> [<workspace>] [template]`
+2. **Create the app:** `bash "$SKILL/scripts/new_app.sh" <board-id> <app-name> [<workspace>] [template] [--scope cm33|dual|cm55] [--opt key=value] [--components a,b]`
    - clones the pinned template app, Project Creator with the base BSP (auto-detects the BSP
      folder), optional pinned BSP replacement (`BSP_SOURCE=git:...`), checks BSP version and the
      **base `design.modus` sha256**, applies overlays (hash-checked), regenerates
@@ -169,16 +209,35 @@ Read `reference/layering.md` before writing code. Rules:
   `EVT ...`, `<TAG> k=v ...`, `INFO ... board=<id> leds=N btns=M` then `READY` - tests depend on it.
 - Write/extend `tests/<app>.json` from the task requirements before the code; gate board-
   dependent steps with `requires_re` (spec keys: `scripts/serial_test.py` docstring).
-- Templates: `templates/_common/` (shared `board/` + `func/` layers, copied into every app) +
-  one app template on top. **Bring-up demos** (run them in this order on a new board):
+- **Components** (reference/components.md): reusable code lives in three layer folders, each
+  component = `component.json` + `files/` (mirrors the app tree):
+  `bsp_templates/` in the **hardware packs** (`psoc-e84-ai-kit`: `ai-kit-board` = board.h API,
+  `cm55-board`; `qwa309`: `qwa309-board` = qwa309.h), `func_templates/` here (services/middleware:
+  `led`, `button`, `console`), `exec_templates/` here (core scope + IPC: `baremetal-cm33`,
+  `baremetal-dual`, `baremetal-cm55`, `ipc-mailbox`). A board's `BOARD_COMPONENTS` are added
+  automatically. `components.py list|show|check|apply|scopes` resolves requires, enforces the core
+  scope, **one exec model per core**, options, board parts and refuses `planned` components
+  (`--allow-planned` only while implementing one). An app template (`templates/<app>/`) holds only
+  the application layer (`main.c`, tests) plus `components.txt` (no exec component - the scope adds
+  it) and `scopes.txt`; `new_app.sh ... --components a,b` adds more.
+  AI Kit sensor drivers (verified 2026-10-10): `i2c-scb0`, `humidity-sht4x`, `pressure-dps368`,
+  `imu-bmi270`, `mag-bmm350` - APIs in `psoc-e84-ai-kit/bsp_templates/README.md`.
+  To add a capability: pick existing components first; else write a new component (manifest +
+  files + README with source/licence), `check` it, then use it from the app template.
+- **Bring-up demos** (run them in this order on a new board):
   `hello-world` (UART "hello, world" every 1 s), `blink` (LED1 toggles every 500 ms, prints
   `BLINK led1=x`), `push-to-light` (console `led`/`led?`/`btn?` commands; BTNn press toggles LEDn).
   Others: `button-led` (hold a button → its LED lights; reports silkscreen name + pin; `pins?`
   shows pin config). Board extras not in the BSP (QWA309 buttons) are configured at run time in
   `board.c`.
-- `dual-core-ipc` (CM33 console + CM55 worker over a shared-memory
-  mailbox: `ipc?`, `ping <n>`, `led55 <1|2> on|off`; template `shared/` is copied to `<app>/shared`
-  and `INCLUDES+=../shared` added to both cores). `help.sh` lists templates from `description.txt`.
+- `sensors` (scope cm33): SHT40 + DPS368 + BMI270 on SCB0, BMM350 on I3C, printed every 1 s as
+  `ENV t=..C rh=..% p=..Pa`, `IMU ax=..mg .. amag=..mg`, `MAG x=..nT .. bmag=..nT`; commands `read`,
+  `rate <ms>`, `scan`, `reinit`, `selftest`, `magrate`. Debug it from the PC with the
+  `sensor-debug` skill; its live preview (`sensor_dash.py --app <app>`, on request only) charts the
+  readings in the browser using the template's `tests/liveview.json`.
+- `dual-core-ipc` (scope dual; CM33 console + CM55 worker over a shared-memory
+  mailbox: `ipc?`, `ping <n>`, `led55 <1|2> on|off`; component `ipc-mailbox` adds `<app>/shared`
+  and `INCLUDES+=../shared` to both cores). `help.sh` lists templates from `description.txt`.
 - Multi-core work (CM55 owns a peripheral, IPC mailbox): reference/layering.md "Dual-core".
 
 ## Stage 4 - Build
@@ -256,17 +315,22 @@ COM ports; tools are located at run time (`env.sh`), and the receiver runs Stage
 
 ## Extending the skill
 
-- **New board:** `boards/_template/README.md` (copy to `boards/<id>/`, fill `board.env` incl. `BOARD_PARTS`, add the
-  `BOARD_<ID>` block - name, button/LED names, extras - to `templates/_common/proj_cm33_ns/board/board.h`
-  and `board.c`). A board built on another one: `BOARD_EXTENDS=<parent>` and only the differences.
-- **New app template:** `templates/<name>/proj_cm33_ns/main.c` (+ more files if needed) and
-  `templates/<name>/tests/<name>.json`; list needed base-board parts in `requires.txt`. `templates/_common/` (board + func layers) is copied first,
-  so a template contains only the application layer. Names starting with `_` are not templates.
-- **New service:** add `func/<svc>.c/.h` to `_common` when reusable, else to the app template.
+- **New board / SoM / base board:** a board goes into the pack of its hardware
+  (`<pack>/boards/<id>/`, from `boards/_template/README.md` here; fill `board.env` incl. `BOARD_PARTS`
+  and `BOARD_COMPONENTS`). A new SoM or base board = a new pack folder with `pack.json` (`kind`,
+  `group`, `som` for base boards, `names`/`explicit_ids` for the prompt gate), `parts.json`,
+  `SKILL.md` (short, facts only), `boards/`, `bsp_templates/`. Add the `BOARD_<ID>` block to the SoM's
+  board component (`psoc-e84-ai-kit/bsp_templates/ai-kit-board/files/proj_cm33_ns/board/board.h`).
+- **New component:** `<layer>_templates/<id>/component.json` + `files/` + `README.md`
+  (schema and rules: reference/components.md). bsp = only layer with `CYBSP_*`/`Cy_*` pin code;
+  func = uses board.h / other func APIs only; exec = loop/RTOS/IPC. Start as `planned`, then
+  `built` (0-warning build), then `verified` (tested on hardware) - record where in `verified`.
+- **New app template:** `templates/<name>/proj_cm33_ns/main.c` (+ `proj_cm55/main.c` if needed),
+  `templates/<name>/tests/<name>.json`, `components.txt` (component ids) and `requires.txt`
+  (base-board parts, optional). A template contains only the application layer. Names starting
+  with `_` are not templates.
 - Keep scripts and `.env` files LF; keep everything PC-specific out of the skill (bench files,
   COM ports, serials, user paths) - it must stay copyable.
-- Proven reference not shipped as a template: the dual-core CM33↔CM55 mailbox demo
-  (reference/layering.md "Dual-core") - its rules are documented, its code is not included.
 
 ## Reporting (always)
 

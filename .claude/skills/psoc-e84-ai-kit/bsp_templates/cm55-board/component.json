@@ -1,0 +1,19 @@
+{
+  "id": "cm55-board",
+  "layer": "bsp",
+  "status": "built",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "board55.h on CM55: init, LED1/LED2 write/read, busy-wait delay (PDL only)",
+  "api": "board/board55.h, board/bsp_status.h",
+  "provides": [
+    "board55-api"
+  ],
+  "requires": {
+    "components": [],
+    "parts": []
+  },
+  "claims": [],
+  "verified": "built 0-warning 2026-10-04 (dual-core-ipc); not run on KIT_PSE84_AI hardware"
+}

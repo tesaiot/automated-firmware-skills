@@ -1,0 +1,36 @@
+{
+  "id": "ipc-mailbox",
+  "layer": "exec",
+  "kind": "ipc",
+  "status": "built",
+  "cores": [
+    "cm33_ns",
+    "cm55"
+  ],
+  "summary": "CM33_NS <-> CM55 shared-memory mailbox (top 256 B of m33_m55_shared SOCMEM, seq counters + __DMB); ipc_client on CM33, worker loop in the app's proj_cm55/main.c",
+  "provides": [
+    "ipc"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board",
+      "cm55-board",
+      "baremetal-dual"
+    ],
+    "parts": []
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "INCLUDES": [
+        "../shared"
+      ]
+    },
+    "proj_cm55": {
+      "INCLUDES": [
+        "../shared"
+      ]
+    }
+  },
+  "verified": "built 0-warning 2026-10-04; not run on KIT_PSE84_AI hardware",
+  "notes": "does not use mtb-ipc / SRF channel 0 or MTB_IPC_IRQ_USER..+3 (owned by the BSP); reference/layering.md 'Dual-core'"
+}

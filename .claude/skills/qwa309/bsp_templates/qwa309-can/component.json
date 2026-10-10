@@ -1,0 +1,31 @@
+{
+  "id": "qwa309-can",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "CAN FD0 ch1, P16.2 RX / P16.3 TX, 500 kbit/s (SN65HVD230; switch shared with RS-485)",
+  "provides": [
+    "qwa309-can"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "can-rs485"
+    ]
+  },
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-mpy/bento_libs/claw/kit-tesaiot-pse84-ai/mpy/modcan.c (prescaler 10, TS1 15, TS2 4, SJW 4 @100 MHz; no bus-off recovery)",
+  "notes": "uses DVP camera data pins - camera off",
+  "claims": [
+    "CANFD0",
+    "P16.2",
+    "P16.3"
+  ],
+  "hw_settings": [
+    "CAN / RS-485 slide switch = CAN",
+    "DVP camera off (CAN uses camera data pins)"
+  ]
+}

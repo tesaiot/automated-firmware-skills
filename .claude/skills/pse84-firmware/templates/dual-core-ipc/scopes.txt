@@ -1,0 +1,2 @@
+# core scopes this template supports (new_app.sh --scope)
+dual

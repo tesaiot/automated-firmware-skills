@@ -1,0 +1,29 @@
+{
+  "id": "qwa309-pots",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "pots VR1..VR4: AutAnalog SAR ch 4..7 on P15.4..P15.7, 12-bit, 0-1.8 V, knob map {5,4,6,7}",
+  "provides": [
+    "qwa309-pots"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "pots"
+    ]
+  },
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/modules/cm55_sensor_poll/cm55_sensor_poll.c + bento-firmware-template-mtb-mpy/bento_libs/claw/kit-tesaiot-pse84-ai/mpy/mod_qwa309_pots.c (SAR started before CM55 boots; readiness via result-status bits, not value 0)",
+  "notes": "needs a hash-checked design.modus overlay (SAR + pins); include board/qwa309.h; VR1/VR2 map: measure",
+  "claims": [
+    "SAR",
+    "P15.4",
+    "P15.5",
+    "P15.6",
+    "P15.7"
+  ]
+}

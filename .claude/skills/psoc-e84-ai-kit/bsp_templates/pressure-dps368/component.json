@@ -1,0 +1,37 @@
+{
+  "id": "pressure-dps368",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "DPS368 pressure + temperature @0x77 on SCB0, INT P11.3; Pa, m°C",
+  "api": "board/baro_dps368.h",
+  "provides": [
+    "pressure-dps368"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb0"
+    ],
+    "parts": [
+      "sensors"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "sensor-xensiv-dps3xx": "mtb://sensor-xensiv-dps3xx#latest-v2.X#$$ASSET_REPO$$/sensor-xensiv-dps3xx/latest-v2.X"
+    }
+  },
+  "claims": [
+    "P11.3"
+  ],
+  "source": "https://github.com/Infineon/sensor-xensiv-dps3xx v2 (mtb_xensiv_dps3xx.h, xensiv_dps3xx.h)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_dps368.c (coefficient source bit, temperature-fix sequence)",
+  "notes": "address 0x76 needs R84",
+  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); p=101107 Pa, tp=42.0C; DATA_NOT_READY handled as NODATA (library wait-loop bug)"
+}

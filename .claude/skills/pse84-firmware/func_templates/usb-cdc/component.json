@@ -1,0 +1,39 @@
+{
+  "id": "usb-cdc",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "emUSB-Device CDC/HID on USB-C J2",
+  "provides": [
+    "usb-cdc"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "emusb-device": "mtb://emusb-device#latest-v2.X#$$ASSET_REPO$$/emusb-device/latest-v2.X"
+    }
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "COMPONENTS": [
+        "USBD_BASE"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-usb-device-hid-mouse",
+  "claims": [
+    "USBHS"
+  ],
+  "notes": "owns the MCU USB-C J2 controller (USBHS); camera-usb-uvc also claims it"
+}

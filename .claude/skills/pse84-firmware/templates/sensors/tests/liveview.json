@@ -1,0 +1,49 @@
+{
+  "_doc": "Live view settings for this app (sensor-debug: sensor_dash.py --app <app>). Keys: see .claude/skills/sensor-debug/web/config.json.",
+  "title": "sensors - AI Kit live view",
+  "window_s": 60,
+  "quick": [
+    "info",
+    "read",
+    "scan",
+    "selftest",
+    "rate 200",
+    "rate 1000",
+    "reinit",
+    "magrate 100 1",
+    "help"
+  ],
+  "units": {
+    "nT": [
+      0.001,
+      "µT"
+    ],
+    "mdps": [
+      0.001,
+      "dps"
+    ],
+    "Pa": [
+      0.01,
+      "hPa"
+    ],
+    "C": [
+      1,
+      "°C"
+    ]
+  },
+  "skip_tags": [
+    "OK",
+    "ERR",
+    "INFO",
+    "READY",
+    "SENSORS",
+    "SCAN",
+    "SELFTEST",
+    "EVT"
+  ],
+  "order": [
+    "ENV",
+    "IMU",
+    "MAG"
+  ]
+}

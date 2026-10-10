@@ -1,0 +1,42 @@
+{
+  "_doc": "Parts of this pack (group ai-kit). Board-scope gate: scripts/board_gate.py.",
+  "name": "PSOC Edge E84 AI Kit (KIT_PSE84_AI) on-board parts",
+  "parts": {
+    "console": {
+      "label": "KitProg3 UART console (SCB2 P6.5/P6.7)"
+    },
+    "sw1": {
+      "label": "user button SW1 (P7.0)"
+    },
+    "leds": {
+      "label": "LED1/LED2 + RGB LED (P10.7, P10.5, P20.4-6)"
+    },
+    "sensors": {
+      "label": "BMI270 0x68 / DPS368 0x77 / SHT40 0x44 on SCB0, BMM350 0x15 on I3C"
+    },
+    "radar": {
+      "label": "BGT60TR13C radar (SCB3)"
+    },
+    "mics": {
+      "label": "2x IM73D122 PDM mics (P8.5/P8.6) + 2x IM73A135 analog mics (P14.x)"
+    },
+    "audio": {
+      "label": "TLV320DAC3100 audio DAC 0x18 (SCB0 + I2S TDM0), speaker J8 (not fitted)"
+    },
+    "wireless": {
+      "label": "CYW55513 Wi-Fi 6 / Bluetooth 5.4 (Murata 2FY, SDIO + SCB4 UART)"
+    },
+    "display": {
+      "label": "MIPI-DSI connector J10 + J16 touch header (not fitted) + SCB5 3.3 V I2C"
+    },
+    "camera": {
+      "label": "USB camera on J2 (Rev *A+) / DVP header J14 (before Rev *A)"
+    },
+    "memory": {
+      "label": "QSPI NOR 64 MB (SMIF0) + octal PSRAM 16 MB (SMIF1)"
+    },
+    "usb": {
+      "label": "MCU USB-C J2 (USB-HS device/host, DRP)"
+    }
+  }
+}

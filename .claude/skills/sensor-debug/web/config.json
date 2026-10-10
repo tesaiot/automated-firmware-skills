@@ -1,0 +1,9 @@
+{
+  "_doc": "Live view template settings (sensor_dash.py serves this as /config.json; --config <file> uses another one, e.g. one per app). title = page heading; window_s = chart length; quick = console buttons (commands of YOUR app's console); units = display conversion {printed unit: [factor, shown unit]}; skip_tags = line tags that are not data (status/replies); order = TAG order on the page (others follow as they appear).",
+  "title": "Sensor live view",
+  "window_s": 60,
+  "quick": ["info", "read", "scan", "selftest", "rate 200", "rate 1000", "reinit", "help"],
+  "units": {"nT": [0.001, "µT"], "mdps": [0.001, "dps"], "Pa": [0.01, "hPa"], "C": [1, "°C"]},
+  "skip_tags": ["OK", "ERR", "INFO", "READY", "SENSORS", "SCAN", "SELFTEST", "EVT"],
+  "order": ["ENV", "IMU", "MAG"]
+}

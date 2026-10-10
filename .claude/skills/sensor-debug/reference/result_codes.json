@@ -1,0 +1,16 @@
+{
+  "_doc": "Hints for status names and raw result codes printed by the firmware (bsp_status_t names; rslt=0x.. = <drv>_last_rslt()). Keys: status name, 0xXXXXXXXX, or a negative vendor code as decimal. Add a line whenever a debug session explains a new code.",
+  "ERR_PARAM": "bad argument / unsupported setting",
+  "ERR_INIT": "peripheral not initialised or its init failed - check the order (i2c0_init before the sensors)",
+  "ERR_BUS": "transfer error - device answered its address but the transaction failed; see rslt",
+  "ERR_NODEV": "no ACK / wrong chip id - wrong address, sensor unpowered, rework option, bus held",
+  "ERR_TIMEOUT": "bounded wait expired - bus stuck (try reinit / i2c0_recover) or clock stretching",
+  "ERR_NODATA": "polled faster than the sensor's data rate - lower the rate or wait for data-ready",
+  "ERR_HW_SETTING": "connector / jumper / rework missing - see the component's hw_settings",
+  "0x00000000": "success",
+  "-1": "Bosch SensorAPI E_NULL_PTR - a driver object/callback is NULL",
+  "-2": "Bosch SensorAPI E_COM_FAIL - bus transfer failed after init: check the bus handle lifetime (BMM350: cy_stc_i3c_device_t must stay alive - static), address, bus speed",
+  "-3": "Bosch SensorAPI E_DEV_NOT_FOUND - chip id mismatch",
+  "-4": "Bosch SensorAPI E_INVALID_CONFIG",
+  "-11": "Bosch BMI2 self-test failed - keep the board still and flat during selftest"
+}

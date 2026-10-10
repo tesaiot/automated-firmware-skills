@@ -1,0 +1,26 @@
+{
+  "id": "scb5-lock",
+  "layer": "exec",
+  "kind": "ipc-lock",
+  "status": "planned",
+  "cores": [
+    "cm33_ns",
+    "cm55"
+  ],
+  "summary": "cross-core lock for the shared SCB5 bus (IPC hardware semaphore, busy-poll, quiesce before unlock)",
+  "provides": [
+    "scb5-lock"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board",
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/shared/include/ipc_scb5_lock.h (sema 16; mask+clear SCB IRQs before unlock, else the other core's ISR steals the transfer)",
+  "notes": "needed only when both cores use SCB5 (e.g. CM33 OPTIGA + CM55 touch/LED matrix)",
+  "arbitrates": [
+    "SCB5"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "psram",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "16 MB octal HyperRAM S70KS1283 on SMIF1 (P4.0-7, CS P0.1, RST P0.0), memory-mapped buffers",
+  "api": "board/psram.h",
+  "provides": [
+    "psram"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "memory"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "SMIF1",
+    "P4.0",
+    "P4.1",
+    "P4.2",
+    "P4.3",
+    "P4.4",
+    "P4.5",
+    "P4.6",
+    "P4.7",
+    "P0.1"
+  ],
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-psram-xip (CYBSP_SMIF_CORE_1_PSRAM_config)",
+  "notes": "P0.0 MEMORY_RST is shared with the QSPI flash - do not toggle it from app code"
+}

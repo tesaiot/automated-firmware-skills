@@ -1,0 +1,42 @@
+{
+  "id": "audio-tlv320dac3100",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "audio DAC @0x18 (TLV320DAC3100) on SCB0 + I2S TX TDM0 (P21.1-3, P12.3); speaker J8 / headphone",
+  "api": "board/audio_out.h",
+  "provides": [
+    "audio-tlv320dac3100"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb0"
+    ],
+    "parts": [
+      "audio"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "audio-codec-tlv320dac3100": "mtb://audio-codec-tlv320dac3100#latest-v1.X#$$ASSET_REPO$$/audio-codec-tlv320dac3100/latest-v1.X"
+    }
+  },
+  "claims": [
+    "TDM0",
+    "P21.1",
+    "P21.2",
+    "P21.3",
+    "P12.3"
+  ],
+  "hw_settings": [
+    "AI Kit J8 speaker connector fitted (Molex 532610271, not fitted by default) with a 4-8 ohm speaker <= 2.5 W"
+  ],
+  "source": "https://github.com/Infineon/audio-codec-tlv320dac3100 (mtb_tlv320dac3100.h), https://github.com/Infineon/mtb-example-psoc-edge-i2s (app_i2s.c: codec on CYBSP_I2C_CONTROLLER = SCB0)",
+  "notes": "UG names no part number for U28; TLV320DAC3100 inferred from I2C 0x18 + the kit's Infineon example - confirm on hardware (page-0 register read)"
+}

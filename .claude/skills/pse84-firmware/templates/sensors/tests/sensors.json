@@ -1,0 +1,22 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info",             "send": "info", "expect_re": ["^INFO app=sensors .*scope=cm33 period_ms=1000"]},
+    {"name": "init I2C sensors", "send": "info", "expect_re": ["^SENSORS i2c0=OK sht40=OK dps368=OK bmi270=OK"]},
+    {"name": "init BMM350",      "send": "info", "expect_re": ["^SENSORS .* bmm350=OK"]},
+    {"name": "scan sensors",     "send": "scan", "expect_re": ["^SCAN bus=i2c0 .*0x44.*0x68.*0x77"]},
+    {"name": "scan audio DAC",   "send": "scan", "expect_re": ["^SCAN bus=i2c0 .*0x18"]},
+    {"name": "ENV plausible",    "expect_re": ["^ENV t=(1\\d|2\\d|3\\d|4[0-4])\\.\\d\\dC rh=\\d{1,2}\\.\\d\\d% p=(8\\d{4}|9\\d{4}|10\\d{4})Pa tp=(1\\d|2\\d|3\\d|4\\d)\\.\\d\\dC$"], "timeout": 2.5, "pause": 0},
+    {"name": "IMU at rest ~1 g", "expect_re": ["^IMU .* amag=(8\\d\\d|9\\d\\d|10\\d\\d|11\\d\\d)mg "], "timeout": 2.5, "pause": 0},
+    {"name": "MAG reads",        "expect_re": ["^MAG x=-?\\d+nT y=-?\\d+nT z=-?\\d+nT bmag=\\d{4,7}nT t=(1\\d|2\\d|3\\d|4\\d)\\.\\d\\dC$"], "timeout": 2.5, "pause": 0},
+    {"name": "BMM350 self-test", "send": "selftest", "expect_re": ["^SELFTEST .* bmm350=OK "], "timeout": 3},
+    {"name": "read command",     "send": "read", "expect": ["OK read"], "expect_re": ["^ENV ", "^IMU "]},
+    {"name": "rate 200",         "send": "rate 200", "expect": ["OK rate period_ms=200"]},
+    {"name": "fast reports",     "expect_re": ["^ENV t="], "timeout": 0.6, "pause": 0},
+    {"name": "rate back 1000",   "send": "rate 1000", "expect": ["OK rate period_ms=1000"]},
+    {"name": "rate range",       "send": "rate 5", "expect": ["ERR rate 100..10000 ms"]},
+    {"name": "console alive",    "send": "foo", "expect": ["ERR unknown command"]}
+  ]
+}

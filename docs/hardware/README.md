@@ -1,8 +1,8 @@
 # Hardware notes
 
 Research and evidence for people. Verified facts the agent uses are in the skill's board sheets:
-[kit-pse84-ai](../../.claude/skills/pse84-firmware/boards/kit-pse84-ai/README.md) ·
-[tesaiot](../../.claude/skills/pse84-firmware/boards/tesaiot/README.md).
+[kit-pse84-ai](../../.claude/skills/psoc-e84-ai-kit/boards/kit-pse84-ai/README.md) ·
+[tesaiot](../../.claude/skills/qwa309/boards/tesaiot/README.md).
 
 | File | Content |
 | --- | --- |

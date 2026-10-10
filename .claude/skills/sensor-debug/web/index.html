@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensor Live View</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d232b; --muted: #66707c; --line: #e2e5ea;
+    --accent: #1f6feb; --ok: #1a7f37; --bad: #cf222e; --warn: #9a6700; --chart: #1f6feb;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1216; --panel: #171b21; --text: #e6e9ee; --muted: #8b95a1; --line: #2a3038;
+            --accent: #58a6ff; --ok: #3fb950; --bad: #f85149; --warn: #d29922; --chart: #58a6ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+           padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 16px; margin: 0; }
+  .pill { font: 12px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+  .pill.ok { color: var(--ok); border-color: var(--ok); }
+  .pill.bad { color: var(--bad); border-color: var(--bad); }
+  #info { color: var(--muted); font: 12px var(--mono); flex: 1 1 300px; overflow-wrap: anywhere; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+               margin: 4px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;
+          margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  .card .name { font: 12px var(--mono); color: var(--muted); display: flex; justify-content: space-between; }
+  .card .val { font: 600 22px var(--mono); margin: 2px 0; white-space: nowrap; }
+  .card .val small { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .card .rng { font: 11px var(--mono); color: var(--muted); }
+  .card canvas { width: 100%; height: 48px; display: block; margin-top: 6px; }
+  .card.err { border-color: var(--bad); }
+  .errline { color: var(--bad); font: 12px var(--mono); margin: 0 0 12px; }
+  aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  #log { height: 420px; overflow: auto; font: 12px/1.35 var(--mono); white-space: pre-wrap;
+         overflow-wrap: anywhere; }
+  #log .d { color: var(--muted); }
+  #log .e { color: var(--bad); }
+  #log .tx { color: var(--accent); }
+  #log .s { color: var(--warn); }
+  form { display: flex; gap: 6px; margin-top: 8px; }
+  input[type=text] { flex: 1; min-width: 0; font: 13px var(--mono); padding: 6px 8px; border-radius: 6px;
+         border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button { font: 12px system-ui, sans-serif; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button:hover { border-color: var(--accent); }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  label { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  #empty { color: var(--muted); padding: 24px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sensor live view</h1>
+  <span id="conn" class="pill">connecting…</span>
+  <span id="rate" class="pill">0 lines/s</span>
+  <span id="info"></span>
+</header>
+<main>
+  <section id="sensors"><p id="empty">Waiting for data lines from the board (<code>TAG key=value</code>)…</p></section>
+  <aside>
+    <div class="box">
+      <section><h2>Console</h2></section>
+      <div id="log"></div>
+      <form id="f"><input id="cmd" type="text" placeholder="command, e.g. rate 200" autocomplete="off">
+        <button type="submit">Send</button></form>
+      <div class="quick" id="quick"></div>
+      <div class="quick"><label><input type="checkbox" id="hideData" checked> hide data lines</label>
+        <label><input type="checkbox" id="pause"> pause charts</label></div>
+    </div>
+  </aside>
+</main>
+<script>
+"use strict";
+const MAX_LOG = 400;
+// Template settings - defaults here, overridden by /config.json (web/config.json or --config)
+let WINDOW_S = 60;
+let QUICK = ["info", "read", "scan", "selftest", "rate 200", "rate 1000", "reinit", "help"];
+// friendlier display units (the firmware prints integers in milli/nano units)
+let UNIT = { nT: [1e-3, "µT"], mdps: [1e-3, "dps"], Pa: [1e-2, "hPa"], C: [1, "°C"] };
+let SKIP = new Set(["OK", "ERR", "INFO", "READY", "SENSORS", "SCAN", "SELFTEST", "EVT"]);
+let ORDER = [];
+const fields = new Map();        // "TAG.key" -> {tag, key, unit, pts: [[t, v]], el}
+const groups = new Map();        // tag -> {grid, err}
+let lines = 0;
+
+const $ = (id) => document.getElementById(id);
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (v) => Math.abs(v) >= 1000 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
+
+function logLine(text, cls) {
+  if (cls === "d" && $("hideData").checked) return;
+  const log = $("log"), div = document.createElement("div");
+  div.className = cls || "";
+  div.textContent = text;
+  const atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 4;
+  log.appendChild(div);
+  while (log.childElementCount > MAX_LOG) log.firstChild.remove();
+  if (atEnd) log.scrollTop = log.scrollHeight;
+}
+
+function group(tag) {
+  if (!groups.has(tag)) {
+    $("empty")?.remove();
+    const sec = document.createElement("section");
+    sec.innerHTML = `<h2>${tag}</h2><p class="errline" hidden></p><div class="grid"></div>`;
+    sec.dataset.tag = tag;
+    // configured TAG order first, the rest in order of appearance
+    const rank = (t) => (ORDER.includes(t) ? ORDER.indexOf(t) : ORDER.length);
+    const before = [...$("sensors").children].find((s) => s.dataset.tag && rank(s.dataset.tag) > rank(tag));
+    $("sensors").insertBefore(sec, before || null);
+    groups.set(tag, { grid: sec.querySelector(".grid"), err: sec.querySelector(".errline") });
+  }
+  return groups.get(tag);
+}
+
+function field(tag, key, unit) {
+  const id = `${tag}.${key}`;
+  if (!fields.has(id)) {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `<div class="name"><span>${id}</span><span class="age"></span></div>
+      <div class="val">–</div><div class="rng"></div><canvas></canvas>`;
+    group(tag).grid.appendChild(el);
+    fields.set(id, { tag, key, unit, pts: [], el });
+  }
+  return fields.get(id);
+}
+
+function onLine(t, line) {
+  lines++;
+  const err = line.match(/^([A-Z][A-Z0-9_]*) ERR (\S+)(.*)$/);
+  if (err && !SKIP.has(err[1])) {
+    const g = group(err[1]);
+    g.err.hidden = false;
+    g.err.textContent = `${new Date(t * 1000).toLocaleTimeString()}  ERR ${err[2]}${err[3]}`;
+    logLine(line, "e");
+    return;
+  }
+  const m = line.match(/^([A-Z][A-Z0-9_]*) (.*)$/);
+  if (m && !SKIP.has(m[1])) {
+    const kv = [...m[2].matchAll(/(\w+)=(-?\d+(?:\.\d+)?)([A-Za-z%]*)(?=\s|$)/g)];
+    if (kv.length) {
+      for (const [, k, v, u] of kv) {
+        const f = field(m[1], k, u);
+        f.pts.push([t, parseFloat(v)]);
+        while (f.pts.length && f.pts[0][0] < t - WINDOW_S) f.pts.shift();
+      }
+      groups.get(m[1]).err.hidden = true;
+      logLine(line, "d");
+      return;
+    }
+  }
+  if (/^(INFO|SENSORS) /.test(line)) {
+    const keep = $("info").dataset;
+    keep[line.split(" ")[0]] = line;
+    $("info").textContent = [keep.INFO, keep.SENSORS].filter(Boolean).join("   ");
+  }
+  logLine(line, /\bERR\b|=ERR_/.test(line) ? "e" : "");
+}
+
+function draw(f) {
+  const [scale, unit] = UNIT[f.unit] || [1, f.unit];
+  const vals = f.pts.map((p) => p[1] * scale);
+  if (!vals.length) return;
+  const last = vals[vals.length - 1], lo = Math.min(...vals), hi = Math.max(...vals);
+  f.el.querySelector(".val").innerHTML = `${fmt(last)} <small>${unit}</small>`;
+  f.el.querySelector(".rng").textContent = `min ${fmt(lo)}  max ${fmt(hi)}  (${WINDOW_S} s)`;
+  f.el.querySelector(".age").textContent = `${Math.max(0, Date.now() / 1000 - f.pts[f.pts.length - 1][0]).toFixed(0)} s`;
+  const c = f.el.querySelector("canvas"), dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth * dpr, h = c.clientHeight * dpr;
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  const g = c.getContext("2d"), now = Date.now() / 1000, pad = (hi - lo) * 0.1 || Math.abs(hi) * 0.01 || 1;
+  g.clearRect(0, 0, w, h);
+  g.strokeStyle = cssVar("--chart");
+  g.lineWidth = 1.5 * dpr;
+  g.beginPath();
+  f.pts.forEach(([t, v], i) => {
+    const x = (1 - (now - t) / WINDOW_S) * w, y = h - ((v * scale - lo + pad) / (hi - lo + 2 * pad)) * h;
+    i ? g.lineTo(x, y) : g.moveTo(x, y);
+  });
+  g.stroke();
+}
+
+function redraw() { if (!$("pause").checked) fields.forEach(draw); }
+const perSec = [];               // lines received in each of the last 5 s
+function rate() {
+  perSec.push(lines); lines = 0;
+  if (perSec.length > 5) perSec.shift();
+  $("rate").textContent = `${(perSec.reduce((a, b) => a + b, 0) / perSec.length).toFixed(1)} lines/s`;
+}
+
+function connect() {
+  const es = new EventSource("/stream");
+  es.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.status) {
+      const ok = m.status.startsWith("connected");
+      $("conn").textContent = m.status;
+      $("conn").className = "pill " + (ok ? "ok" : "bad");
+      logLine(`[${m.status}]`, "s");
+    } else if (m.line) onLine(m.t, m.line);
+  };
+  es.onerror = () => { $("conn").textContent = "server stopped"; $("conn").className = "pill bad"; };
+}
+
+async function send(cmd) {
+  logLine(`> ${cmd}`, "tx");
+  try {
+    const r = await fetch("/cmd", { method: "POST", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ cmd }) });
+    const j = await r.json();
+    if (!j.ok) logLine(`[send failed: ${j.error}]`, "e");
+  } catch (e) { logLine(`[send failed: ${e}]`, "e"); }
+}
+
+async function start() {
+  try {
+    const c = await (await fetch("/config.json")).json();
+    if (c.title) { document.title = c.title; document.querySelector("h1").textContent = c.title; }
+    if (c.window_s) WINDOW_S = c.window_s;
+    if (Array.isArray(c.quick)) QUICK = c.quick;
+    if (c.units) UNIT = c.units;
+    if (Array.isArray(c.skip_tags)) SKIP = new Set(c.skip_tags);
+    if (Array.isArray(c.order)) ORDER = c.order;
+  } catch (e) { logLine(`[no /config.json - built-in defaults: ${e}]`, "s"); }
+  QUICK.forEach((q) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = q; b.onclick = () => send(q);
+    $("quick").appendChild(b);
+  });
+  $("f").onsubmit = (e) => { e.preventDefault(); const v = $("cmd").value.trim(); if (v) { send(v); $("cmd").value = ""; } };
+  connect();
+  setInterval(redraw, 250);
+  setInterval(rate, 1000);
+}
+start();
+</script>
+</body>
+</html>

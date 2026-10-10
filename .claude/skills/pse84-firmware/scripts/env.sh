@@ -3,7 +3,19 @@
 # Run scripts from Git Bash or Claude's Bash tool - in PowerShell, "bash" may start WSL instead.
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BOARDS_DIR="$SKILL_DIR/boards"
+BOARDS_DIR="$SKILL_DIR/boards"                 # engine: only _template - real boards live in hardware packs
+PACKS_ROOT="$(dirname "$SKILL_DIR")"           # sibling skill folders with a pack.json (scripts/packs.py)
+# board_dir <id>: profile folder of a board (engine boards/ first, then the boards/ of every pack)
+board_dir() {
+  local d
+  [ -f "$BOARDS_DIR/$1/board.env" ] && { echo "$BOARDS_DIR/$1"; return 0; }
+  for d in "$PACKS_ROOT"/*/boards/"$1"; do
+    [ -f "$d/board.env" ] && [ -f "$d/../../pack.json" ] && { echo "$d"; return 0; }
+  done
+  return 1
+}
+# board_ids: every real board id in the packs
+board_ids() { for d in "$PACKS_ROOT"/*/boards/*/; do basename "$d"; done | grep -v '^_' | sort -u | tr '\n' ' '; }
 
 # Where apps go (PSE84_WS), decided from where the skill folder sits:
 #   <project>/.claude/skills/pse84-firmware  -> <project>/apps      (project skill, "template root")
@@ -87,15 +99,13 @@ require_vars() {
 
 # load_board <id>: board type (skill) -> bench instance (this PC) -> env overrides
 load_board() {
-  BOARD_DIR="$BOARDS_DIR/$1"
-  [ -f "$BOARD_DIR/board.env" ] || die "unknown board '$1' (no $BOARD_DIR/board.env). Known: $(ls "$BOARDS_DIR" | grep -v '^_' | tr '\n' ' ')"
+  BOARD_DIR="$(board_dir "$1")" || die "unknown board '$1'. Known: $(board_ids)"
   # BOARD_EXTENDS=<parent>: load the parent profile first, then override with this one.
   # Overlay files are looked up here first, then in BOARD_PARENT_DIR.
   BOARD_PARENT_DIR=""
   local parent; parent="$(sed -n 's/^BOARD_EXTENDS=\([A-Za-z0-9_-]*\).*/\1/p' "$BOARD_DIR/board.env")"
   if [ -n "$parent" ]; then
-    BOARD_PARENT_DIR="$BOARDS_DIR/$parent"
-    [ -f "$BOARD_PARENT_DIR/board.env" ] || die "board '$1' extends unknown board '$parent'"
+    BOARD_PARENT_DIR="$(board_dir "$parent")" || die "board '$1' extends unknown board '$parent'"
     # shellcheck disable=SC1090
     . "$BOARD_PARENT_DIR/board.env"
   fi

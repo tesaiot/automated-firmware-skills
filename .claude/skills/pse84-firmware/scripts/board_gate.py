@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Board-scope gate: the bare PSOC Edge E84 AI Kit (board id kit-pse84-ai) cannot reach the parts of
-the TESAIoT QWA309 base board (pots, SW4/SW5, LED matrix, CapSense, Arduino/mikroBUS headers, CAN,
-OPTIGA ...). Requests and apps that need them must target board id `tesaiot`.
+"""Board-scope gate: a board can only use the parts of the hardware packs it is made of. The bare
+PSOC Edge E84 AI Kit (board id kit-pse84-ai, pack psoc-e84-ai-kit) cannot reach the parts of the
+QWA309 base board (pack qwa309: pots, SW4/SW5, LED matrix, CapSense, headers, CAN, OPTIGA ...);
+requests and apps that need them must target a board that has the base board (tesaiot).
 
-Data: boards/components.json (parts per hardware group, prompt keywords, source symbols) and
-BOARD_PARTS in boards/<id>/board.env (groups a board has; BOARD_EXTENDS is followed).
+Data (scripts/packs.py): each pack's pack.json (kind, group, board names) + parts.json (parts,
+prompt keywords, source symbols); BOARD_PARTS in boards/<id>/board.env (groups a board has,
+BOARD_EXTENDS followed); scripts/prompt_gate.json (override token, size limit).
 
 Usage:
-  board_gate.py hook                      UserPromptSubmit hook: JSON on stdin; prints a block
-                                          decision when a prompt asks for a base-board part on the
-                                          bare E84 / AI Kit. "#board-ok" in the prompt skips it.
+  board_gate.py hook                      UserPromptSubmit hook: JSON on stdin; blocks a prompt that
+                                          asks for a base-board part on its bare SoM. "#board-ok"
+                                          in the prompt skips it.
   board_gate.py check <board-id> <part|words...>
                                           part ids (pots, led-matrix ...) or free text
   board_gate.py app <app-dir> [<part|words...>]
@@ -23,24 +25,26 @@ import re
 import sys
 from pathlib import Path
 
-SKILL = Path(__file__).resolve().parent.parent
-BOARDS = SKILL / "boards"
-DATA = json.loads((BOARDS / "components.json").read_text(encoding="utf-8"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import packs  # noqa: E402
+
+PACKS = packs.packs()
+GROUPS = packs.groups()
+PROMPT = json.loads((Path(__file__).resolve().parent / "prompt_gate.json").read_text(encoding="utf-8"))
 SRC_SKIP = {"board", "libs", "build", "GeneratedSource", "bsps", ".git"}
 
 
 def board_env(board_id):
-    env, seen, bid = {}, set(), board_id
-    chain = []
+    env, seen, bid, chain = {}, set(), board_id, []
     while bid and bid not in seen:
         seen.add(bid)
-        f = BOARDS / bid / "board.env"
-        if not f.is_file():
+        d = packs.board_dir(bid)
+        if d is None:
             if bid == board_id:
-                raise SystemExit(f"GATE: BLOCKED unknown board id '{board_id}' (boards/<id>/board.env)")
+                raise SystemExit(f"GATE: BLOCKED unknown board id '{board_id}' (known: {' '.join(packs.board_ids())})")
             break
         vals = {}
-        for line in f.read_text(encoding="utf-8").splitlines():
+        for line in (d / "board.env").read_text(encoding="utf-8").splitlines():
             m = re.match(r'\s*([A-Z_]+)=("([^"]*)"|[^#\s]*)', line)
             if m:
                 vals[m.group(1)] = m.group(3) if m.group(3) is not None else m.group(2)
@@ -56,9 +60,13 @@ def board_groups(board_id):
 
 
 def all_parts():
-    for gid, g in DATA["groups"].items():
+    for gid, g in GROUPS.items():
         for pid, p in g["parts"].items():
             yield gid, pid, p
+
+
+def boards_with(group):
+    return [b for b in packs.board_ids() if group in board_groups(b)]
 
 
 def find_parts(text):
@@ -79,9 +87,10 @@ def verdict(board_id, hits, source="request"):
         return 0
     for g, pid, p in missing:
         print(f"GATE: BLOCKED {source} needs '{pid}' - {p['label']}; board '{board_id}' has no "
-              f"{DATA['groups'][g]['name']}")
-    print("ACTION: CHOOSE use board id 'tesaiot' (AI Kit on the QWA309 base board): "
-          "new_app.sh tesaiot <app> ... - or drop the base-board part")
+              f"{GROUPS[g]['name']}")
+    alt = sorted({b for g, _, _ in missing for b in boards_with(g)})
+    print(f"ACTION: CHOOSE use a board that has it ({', '.join(alt) or 'none known'}): "
+          "new_app.sh <board> <app> ... - or drop the part")
     return 1
 
 
@@ -99,30 +108,42 @@ def scan_app(appdir):
     return hits
 
 
+def blocked_by(prompt, base):
+    """parts of base-board pack `base` that the prompt asks for on its bare SoM (else [])"""
+    som = PACKS.get(base.get("som", ""))
+    hits = [(g, pid, p) for g, pid, p in find_parts(prompt) if g == base["group"]]
+    if not hits or som is None:
+        return []
+    names = lambda pack: any(re.search(k, prompt, re.I) for k in pack.get("names", []))
+    explicit = any(re.search(k, prompt) for k in som.get("explicit_ids", []))   # case-sensitive ids
+    if not explicit and (names(base) or not names(som)):
+        return []                 # base board named, or no board named at all: allowed
+    return hits
+
+
 def hook():
     try:                                   # Claude Code sends UTF-8; don't trust the console code page
         prompt = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace")).get("prompt", "") or ""
     except (ValueError, AttributeError):
         return 0
-    cfg = DATA["prompt"]
-    if cfg["override"] in prompt:
+    if PROMPT["override"] in prompt or len(prompt) > PROMPT.get("max_prompt_chars", 1500):
+        return 0                  # long text = agent report / pasted doc, not a request
+    for base in (p for p in PACKS.values() if p.get("kind") == "baseboard"):
+        hits = blocked_by(prompt, base)
+        if not hits:
+            continue
+        som = PACKS[base["som"]]
+        parts = "; ".join(f"{pid} ({p['label']})" for _, pid, p in hits)
+        boards = ", ".join(base.get("boards", []))
+        reason = (
+            f"BOARD GATE: this request targets the bare {som.get('title', som['id'])} "
+            f"(board '{', '.join(som.get('boards', []))}'), which cannot reach the {base.get('title', base['id'])} "
+            f"parts it asks for: {parts}. Re-send it for a board with that base board ({boards}), or drop "
+            f"those parts. If you only want to discuss it, add {PROMPT['override']} to the prompt.\n"
+            "บอร์ด SoM เปล่า ๆ ใช้อุปกรณ์บนบอร์ดฐานไม่ได้ - ให้ระบุบอร์ดที่มีบอร์ดฐาน "
+            f"({boards}) แล้วส่งใหม่ (หรือใส่ {PROMPT['override']} ถ้าแค่ต้องการถาม)")
+        print(json.dumps({"decision": "block", "reason": reason}))   # ASCII-escaped: safe on any code page
         return 0
-    hits = [(g, pid, p) for g, pid, p in find_parts(prompt) if g == "qwa309"]
-    if not hits:
-        return 0
-    has = lambda key: any(re.search(k, prompt, re.I) for k in cfg[key])
-    explicit_e84 = has("explicit_e84_id")
-    if not explicit_e84 and (has("tesaiot") or not has("e84_only")):
-        return 0                  # TESAIoT named, or no board named at all: allowed
-    parts = "; ".join(f"{pid} ({p['label']})" for _, pid, p in hits)
-    reason = (
-        "BOARD GATE: this request targets the bare PSOC Edge E84 AI Kit (board 'kit-pse84-ai'), "
-        f"which cannot reach the TESAIoT base-board (QWA309) parts it asks for: {parts}. "
-        "Re-send it for the TESAIoT Dev Kit (say 'tesaiot', board id tesaiot), or drop those parts. "
-        f"If you only want to discuss it, add {cfg['override']} to the prompt.\n"
-        "บอร์ด PSOC Edge E84 AI Kit เปล่า ๆ ใช้อุปกรณ์บนบอร์ดฐาน QWA309 ของ TESAIoT ไม่ได้ - "
-        "ให้ระบุบอร์ด tesaiot แล้วส่งใหม่ (หรือใส่ #board-ok ถ้าแค่ต้องการถาม)")
-    print(json.dumps({"decision": "block", "reason": reason}))   # ASCII-escaped: safe on any code page
     return 0
 
 
@@ -135,9 +156,8 @@ def main(argv):
         return hook()
     if cmd == "list" and rest:
         have = board_groups(rest[0])
-        for gid, g in DATA["groups"].items():
-            mark = "HAS " if gid in have else "NO  "
-            print(f"{mark} {gid}: {g['name']}")
+        for gid, g in GROUPS.items():
+            print(f"{'HAS ' if gid in have else 'NO  '} {gid} (pack {g['pack']}): {g['name']}")
             for pid, p in g["parts"].items():
                 print(f"       {pid:15s} {p['label']}")
         return 0

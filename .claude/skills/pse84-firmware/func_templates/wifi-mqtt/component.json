@@ -1,0 +1,41 @@
+{
+  "id": "wifi-mqtt",
+  "layer": "func",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "Wi-Fi (CYW55513) + connection manager + MQTT on CM33_NS",
+  "provides": [
+    "wifi-mqtt"
+  ],
+  "requires": {
+    "components": [
+      "freertos-cm33"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm33_ns": {
+      "wifi-core-freertos-lwip-mbedtls": "mtb://wifi-core-freertos-lwip-mbedtls#latest-v3.X#$$ASSET_REPO$$/wifi-core-freertos-lwip-mbedtls/latest-v3.X",
+      "mqtt": "mtb://mqtt#latest-v4.X#$$ASSET_REPO$$/mqtt/latest-v4.X"
+    }
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "COMPONENTS": [
+        "LWIP",
+        "MBEDTLS",
+        "WCM",
+        "SECURE_SOCKETS"
+      ],
+      "DEFINES": [
+        "CYBSP_WIFI_CAPABLE"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-wifi-mqtt-client"
+}

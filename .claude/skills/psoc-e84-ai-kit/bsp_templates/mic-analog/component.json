@@ -1,0 +1,39 @@
+{
+  "id": "mic-analog",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "2x IM73A135 analog mics via Autonomous Analog CTB + SAR (P14.0-P14.7) - research item",
+  "api": "board/mic_analog.h",
+  "provides": [
+    "mic-analog"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": [
+      "mics"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "SAR",
+    "CTB",
+    "P14.0",
+    "P14.1",
+    "P14.2",
+    "P14.3",
+    "P14.4",
+    "P14.5",
+    "P14.6",
+    "P14.7"
+  ],
+  "source": "PDL autonomous analog (CTB opamp + SAR); https://github.com/Infineon/mtb-example-psoc-edge-adc-basic for the SAR part; no mic example found",
+  "notes": "needs a design.modus overlay; SAR also claimed by qwa309-pots -> needs a shared SAR-scan arbiter before both can run"
+}

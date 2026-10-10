@@ -7,11 +7,12 @@
 LANG_EN=0; [ "$1" = "--en" ] && LANG_EN=1
 
 boards() {
-  for f in "$BOARDS_DIR"/*/board.env; do
+  for f in "$PACKS_ROOT"/*/boards/*/board.env; do
     id="$(basename "$(dirname "$f")")"; [ "${id#_}" = "$id" ] || continue
     name="$(sed -n 's/^BOARD_NAME="\{0,1\}\([^"#]*\)"\{0,1\}.*/\1/p' "$f" | head -1)"
     ext="$(sed -n 's/^BOARD_EXTENDS=\([A-Za-z0-9_-]*\).*/\1/p' "$f")"
-    printf '    %-14s %s%s\n' "$id" "$name" "${ext:+  (= $ext + extras)}"
+    pack="$(basename "$(dirname "$(dirname "$(dirname "$f")")")")"
+    printf '    %-14s %s%s  [pack %s]\n' "$id" "$name" "${ext:+  (= $ext + extras)}" "$pack"
   done
 }
 templates() {
@@ -36,12 +37,15 @@ PSOC Edge E84 firmware skill - what you can ask (say it in your own words)
   "create a hello-world app for tesaiot"   -> new_app.sh <board> <app> "" hello-world
   "start from the BLE Find Me example"     -> new_app.sh <board> <app> --example btstack-findme
   "write an app: press SW1, LED1 lights"   -> template + code in board/ func/ main.c layers
+  "which components exist?" / "add FreeRTOS" -> components.py list [--all] | check | new_app.sh --components
   "build it"                               -> build.sh <app>
   "open it in VS Code"                     -> open_ide.sh <app> [--refresh]
  Run on hardware (Claude asks before every flash)
   "back up the board first"                -> backup.sh <board>
   "flash it" / "restore the backup"        -> flash.sh <app> --yes [--hex <file>]
   "test it" / "test with button presses"   -> serial_test.py auto <spec> <log> --board <b> [--interactive]
+  "debug the sensors" / "why is MAG ERR?"  -> sensor-debug skill: sensor_debug.py --board <b> diag | watch | diff
+  "show the readings live in the browser"  -> sensor-debug skill: sensor_dash.py --app <app>  (stop it after)
  Housekeeping
   "clean the workspace"                    -> clean.sh [--build-only]  (dry run, then --yes)
   "add a new board" / "add a template"     -> boards/_template/README.md, SKILL.md "Extending"
@@ -60,12 +64,15 @@ skill pse84-firmware (PSOC Edge E84) - สั่ง Claude ได้ด้วย
   "สร้างแอป hello world ให้ tesaiot"          -> new_app.sh <board> <app> "" hello-world
   "เริ่มจาก example BLE Find Me"             -> new_app.sh <board> <app> --example btstack-findme
   "เขียนแอป กด SW1 แล้ว LED1 ติด"             -> template + โค้ดแบ่ง layer board/ func/ main.c
+  "มี component อะไรบ้าง" / "เพิ่ม FreeRTOS"     -> components.py list [--all] | check | new_app.sh --components
   "build ให้หน่อย"                           -> build.sh <app>
   "เปิดใน VS Code"                           -> open_ide.sh <app> [--refresh]
  ใช้กับบอร์ดจริง (Claude จะขออนุญาตก่อน flash ทุกครั้ง)
   "สำรอง firmware เดิมก่อน"                   -> backup.sh <board>
   "flash เลย" / "คืน firmware เดิม"           -> flash.sh <app> --yes [--hex <file>]
   "ทดสอบ" / "ทดสอบแบบกดปุ่มด้วย"             -> serial_test.py auto <spec> <log> --board <b> [--interactive]
+  "ดีบักเซนเซอร์" / "ค่าเซนเซอร์ผิด"              -> sensor-debug: sensor_debug.py --board <b> diag | watch | diff
+  "ดูค่าเซนเซอร์สดบนเว็บ" / "เปิดกราฟ"             -> sensor-debug: sensor_dash.py --app <app>  (ปิดเมื่อใช้เสร็จ)
  ดูแลโฟลเดอร์
   "clean ให้หน่อย"                            -> clean.sh [--build-only]  (แสดงรายการก่อน แล้วค่อย --yes)
   "เพิ่มบอร์ดใหม่" / "เพิ่ม template"           -> boards/_template/README.md, SKILL.md หัวข้อ Extending
@@ -76,4 +83,6 @@ echo
 boards
 [ $LANG_EN = 1 ] && echo " App templates:" || echo " template แอป:"
 templates
+[ $LANG_EN = 1 ] && echo " Components (bsp / func / exec):" || echo " component (bsp / func / exec):"
+"$PYTHON" "$SKILL_DIR/scripts/components.py" list | cut -c1-110 | sed 's/^/    /'
 [ $LANG_EN = 1 ] && echo " Apps workspace: $PSE84_WS" || echo " โฟลเดอร์แอป: $PSE84_WS"

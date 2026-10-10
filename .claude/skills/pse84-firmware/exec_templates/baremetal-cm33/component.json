@@ -1,0 +1,30 @@
+{
+  "id": "baremetal-cm33",
+  "layer": "exec",
+  "status": "verified",
+  "scope": "cm33",
+  "scope_title": "CM33_NS only - CM55 parked",
+  "scope_jobs": {
+    "cm33_ns": "everything: board init, console UART, sensors/peripherals, application logic (super-loop)",
+    "cm55": "booted by board_start_cm55(), runs the vendor idle loop (deep sleep) - no app code"
+  },
+  "cores": [
+    "cm33_ns"
+  ],
+  "summary": "scope cm33: super-loop on CM33_NS timed by board_millis() (SysTick 1 kHz in ai-kit-board); CM55 parked in the vendor idle loop",
+  "exec_model": {
+    "cm33_ns": "baremetal",
+    "cm55": "idle"
+  },
+  "provides": [
+    "exec"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "verified": "2026-10-10 tesaiot: hello-world, blink, push-to-light (as 'baremetal')",
+  "notes": "no files: the loop lives in the app's main.c (poll func services, never block > 1 ms); the app template has no proj_cm55/main.c"
+}

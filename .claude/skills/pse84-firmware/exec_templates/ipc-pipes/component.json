@@ -1,0 +1,36 @@
+{
+  "id": "ipc-pipes",
+  "layer": "exec",
+  "kind": "ipc",
+  "status": "planned",
+  "cores": [
+    "cm33_ns",
+    "cm55"
+  ],
+  "summary": "PDL IPC pipes CM33_NS<->CM55: endpoint-addressed commands + callbacks (bare-metal OK)",
+  "provides": [
+    "ipc-pipes"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board",
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "makefile": {
+    "proj_cm33_ns": {
+      "INCLUDES": [
+        "../shared"
+      ]
+    },
+    "proj_cm55": {
+      "INCLUDES": [
+        "../shared"
+      ]
+    }
+  },
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-ipc-pipes (KIT_PSE84_AI listed; CM33 endpoint 1 / client 3, CM55 endpoint 2 / client 5)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/shared/include/ipc_communication.h + shared/source/COMPONENT_CM33|CM55 (init semaphores once; message buffers CY_SECTION_SHAREDMEM; send retry 20 x 100 us)",
+  "notes": "never MTB_IPC_CHAN_0 / SRF semaphores (BSP); alternative to ipc-mailbox"
+}

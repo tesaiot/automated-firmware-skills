@@ -1,0 +1,23 @@
+{
+  "id": "mtb-ipc-queue",
+  "layer": "exec",
+  "kind": "ipc",
+  "status": "planned",
+  "cores": [
+    "cm33_ns",
+    "cm55"
+  ],
+  "summary": "mtb-ipc queues/semaphores (RTOS-aware) on a non-BSP channel via cybsp_cm33/cm55_ipc_instance",
+  "provides": [
+    "mtb-ipc-queue"
+  ],
+  "requires": {
+    "components": [
+      "freertos-cm33",
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "source": "https://github.com/Infineon/mtb-ipc (v1.2; arrives with the BSP - no deps line)",
+  "notes": "MTB_IPC_CHAN_0 and the SRF semaphore/IRQ indices belong to the BSP (mtb_ipc_config.h)"
+}
