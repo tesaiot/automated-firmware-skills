@@ -113,6 +113,12 @@ Adapting the template to an app (no code change; the page follows the console pr
 - data `"<TAG> key=<number><unit> ..."` (TAG upper case; units glued to the number: `t=24.81C`,
   `p=101107Pa`, `ax=-12mg`, `x=-345210nT`) - integers or fixed-point, no floats with exponents
 - failed read `"<TAG> ERR <bsp status> [rslt=0x%08lX]"` - always print the raw code
+- **JSON lines** are understood too (format of the E84_TouchUI / WheelSense firmware,
+  <https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI>):
+  `{"sensor":"sht4x","t_cx100":2512,"h_rhx100":4630,"seq":7}` → `SHT4X.t` 25.12 °C, `SHT4X.h`
+  46.30 %; key = `<name>_<unit>[x<scale>]` (units `c rh pct hpa pa g mg dps mdps ut nt lux ms v mv`),
+  `{"sensor":"dps368","error":"init failed"}` → error on that sensor. Same rules in
+  `sensor_debug.py` (`parse_json`) and the live view, so those apps work unchanged.
 - `"SENSORS <name>=<status> ..."` (init), `"SCAN bus=<bus> n=<k> 0x.. ..."`,
   `"SELFTEST <name>=<status> rslt=0x.. ..."`, commands `info`, `scan`, `selftest`, `rate <ms>`,
   `read`, replies `OK ...` / `ERR ...`

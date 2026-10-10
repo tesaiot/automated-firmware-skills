@@ -11,7 +11,13 @@ Usage:
   components.py list [--layer bsp|func|exec] [--all]     catalog (--all includes planned)
   components.py show <id>                                 manifest + files
   components.py scopes                                    core scopes (exec components with "scope")
-  components.py scope-ids <scope> [<given ids...>]         exec ids for a scope (+ default IPC template)
+  components.py variant <template-dir> <scope|-> <models|-> [<given ids...>]
+                                  pick the template's scope + per-core models from its scopes.txt
+                                  (lines "dual cm33_ns=freertos cm55=baremetal"); models "cm33=freertos,cm55=..."
+                                  Prints "VARIANT: <line>" + "IDS: <scope> <models> [<IPC>]" or ACTION: CHOOSE
+  components.py patch <app-dir>                            apply the "patches" of the app's components to
+                                  their libraries in <workspace>/mtb_shared (idempotent; build.sh runs it
+                                  after getlibs). Lines: PATCH: applied|already|BLOCKED ...
   components.py check <board-id> <id...> [--opt key=value ...] [--allow-planned]
                                   resolve requires (transitively, plus BOARD_COMPONENTS of the
                                   board) and gate: pack + board parts (board_gate.py), exactly one
@@ -74,7 +80,7 @@ def scope_choices(comps):
     parts = []
     for sc, cs in scopes(comps).items():
         for c in cs:
-            ipc = " + an IPC template (ipc-mailbox)" if c.get("needs_kind") == "ipc" else ""
+            ipc = " + an IPC template (ipc-mailbox | ipc-none)" if c.get("needs_kind") == "ipc" else ""
             parts.append(f"{sc} = {c.get('scope_title', sc)} [{c['id']}{ipc}, {c.get('status', '?')}]")
     return " | ".join(parts)
 
@@ -160,8 +166,6 @@ def resolve(comps, ids, board, allow_planned=False, opts=None):
             for core in c.get("cores", []):
                 if core in models and models[core][0] not in allowed:
                     errs.append(f"'{c['id']}' runs under {allowed} but core {core} uses '{models[core][0]}'")
-    if sel and not models:
-        errs.append("no execution model selected (add one exec component, e.g. baremetal-cm33)")
     # core scope: which cores run application code (exactly one scope component per app)
     sc = {c["scope"]: c for c in sel if c.get("scope")}
     if sel and not sc:
@@ -171,21 +175,30 @@ def resolve(comps, ids, board, allow_planned=False, opts=None):
                     + " - pick one")
     elif sc:
         scope, owner = next(iter(sc.items()))
-        if scope == "cm33":
-            for c in sel:
-                if "cm55" in c.get("cores", []) and not c.get("scope"):
-                    errs.append(f"'{c['id']}' runs on CM55 - scope cm33 leaves CM55 parked; "
-                                f"choose scope dual (baremetal-dual + ipc-mailbox)")
+        parked, app_cores = owner.get("parked", {}), owner.get("app_cores", [])
+        # one execution model per application core, none for a parked core
+        for core in app_cores:
+            if core not in models:
+                opts = sorted(x["id"] for x in comps.values() if core in x.get("exec_model", {}))
+                errs.append(f"core {core} runs application code in scope {scope} - choose its "
+                            f"execution model ({' | '.join(opts)}; new_app.sh --model)")
+        for core, (model, cid) in models.items():
+            if core in parked:
+                errs.append(f"'{cid}' sets model {model} for {core}, but scope {scope} keeps {core} "
+                            f"'{parked[core]}' - drop it or choose another scope")
+        # no application/driver code on a parked core (except what the scope allows, e.g. boot shim)
+        allow = owner.get("scope_allows", {})
+        for c in sel:
+            if c["layer"] == "exec":
+                continue
+            for core in c.get("cores", []):
+                if core in parked and c["id"] not in allow.get(core, []):
+                    errs.append(f"'{c['id']}' runs on {core}, but scope {scope} keeps {core} "
+                                f"'{parked[core]}' - choose scope dual")
         if owner.get("needs_kind") and not any(c.get("kind") == owner["needs_kind"] for c in sel):
             alts = sorted(x["id"] for x in comps.values() if x.get("kind") == owner["needs_kind"])
             errs.append(f"scope {scope} needs an {owner['needs_kind'].upper()} template - add one of: "
                         + ", ".join(f"{a} ({comps[a].get('status')})" for a in alts))
-        allow_cm33 = owner.get("scope_allows", {}).get("cm33_ns")
-        if allow_cm33 is not None:
-            for c in sel:
-                if "cm33_ns" in c.get("cores", []) and not c.get("scope") and c["id"] not in allow_cm33:
-                    errs.append(f"'{c['id']}' runs on CM33_NS - scope {scope} keeps CM33_NS as boot "
-                                f"shim only (allowed: {', '.join(allow_cm33)}); move it or choose dual")
     # conflicts
     ids_sel = {c["id"] for c in sel}
     for c in sel:
@@ -241,6 +254,9 @@ def gate(sel, errs, board, comps=None, opts=None):
                   "or drop that component")
         if comps and any(e.startswith("no core scope") for e in errs):
             print(f"ACTION: CHOOSE core scope (ask the user): {scope_choices(comps)}")
+        if any("choose its execution model" in e for e in errs):
+            print("ACTION: CHOOSE execution model per core (ask the user): baremetal = super-loop, "
+                  "freertos = tasks + kernel tick; the app template must implement the combination")
         for c, key, spec in options(sel, opts or {})[2]:
             rec = spec.get("recommended")
             ch = " | ".join(f"{k} = {v.get('label', '')}" + (" (recommended)" if k == rec else "")
@@ -306,8 +322,105 @@ def apply(appdir, sel, opts=None):
         add_make_lines(mk, "DEFINES", values)
     print("APP_COMPONENTS=" + " ".join(c["id"] for c in sel))
     print("APP_SCOPE=" + next((c["scope"] for c in sel if c.get("scope")), "none"))
+    models = {core: m for c in sel for core, m in c.get("exec_model", {}).items()}
+    print("APP_MODELS=" + " ".join(f"{k}={v}" for k, v in sorted(models.items())))
     print("APP_OPTIONS=" + " ".join(f"{k}={v}" for k, v in sorted((opts or {}).items())))
     print("APP_HW_SETTINGS=" + " | ".join(hw_settings(sel)))
+
+
+def patch_libs(appdir, comps):
+    """apply component "patches" (regex text edits of vendor library files) to mtb_shared.
+    A patch: {"lib": "<mtb_shared folder>", "file": "<path in the lib version folder>",
+              "find_re": "...", "replace": "...", "applied_re": "...", "why": "...", "source": "..."}
+    applied_re present -> already patched; find_re present -> patch; neither -> BLOCKED (library changed)."""
+    appdir = Path(appdir)
+    env = appdir / "pse84-app.env"
+    if not env.is_file():
+        print(f"PATCH: BLOCKED {env} missing (not an app made by new_app.sh)")
+        return 1
+    ids = next((l.split("=", 1)[1].split() for l in env.read_text(encoding="utf-8").splitlines()
+                if l.startswith("APP_COMPONENTS=")), [])
+    shared, rc = appdir.parent / "mtb_shared", 0
+    for cid in ids:
+        for p in comps.get(cid, {}).get("patches", []):
+            files = sorted((shared / p["lib"]).glob(f"*/{p['file']}"))
+            if not files:
+                print(f"PATCH: BLOCKED {cid}: {p['lib']}/*/{p['file']} not in {shared} - run build.sh --getlibs")
+                rc = 1
+                continue
+            for f in files:
+                with open(f, encoding="utf-8", errors="surrogateescape", newline="") as fh:
+                    text = fh.read()                     # keep the file's own line endings
+                rel = f.relative_to(shared)
+                if re.search(p["applied_re"], text, re.M):
+                    print(f"PATCH: already {cid}: {rel}")
+                    continue
+                new, n = re.subn(p["find_re"], p["replace"], text, count=1, flags=re.M)
+                if n != 1:
+                    print(f"PATCH: BLOCKED {cid}: {rel} - pattern not found (library changed? re-check: {p.get('why', '')})")
+                    rc = 1
+                    continue
+                f.write_text(new, encoding="utf-8", errors="surrogateescape", newline="")
+                print(f"PATCH: applied {cid}: {rel} ({p.get('why', '')})")
+    return rc
+
+
+CORE_ALIAS = {"cm33": "cm33_ns", "cm33_ns": "cm33_ns", "cm55": "cm55"}
+
+
+def variant(comps, tdir, scope, models, given):
+    """choose one line of <template>/scopes.txt; returns exit code, prints VARIANT/IDS or ACTION"""
+    f = Path(tdir) / "scopes.txt"
+    lines = [l.split() for l in f.read_text(encoding="utf-8").splitlines()
+             if l.strip() and not l.lstrip().startswith("#")] if f.is_file() else []
+    if not lines:
+        print(f"COMPONENTS: BLOCKED {f} missing - a template must list its scope/model variants")
+        return 1
+    want = {}
+    if models not in ("", "-"):
+        for kv in models.split(","):
+            core, _, model = kv.partition("=")
+            if CORE_ALIAS.get(core.strip()) is None or not model:
+                print(f"COMPONENTS: BLOCKED bad --model '{kv}' (use cm33=<model>,cm55=<model>)")
+                return 1
+            want[CORE_ALIAS[core.strip()]] = model.strip()
+    variants = []
+    for parts in lines:
+        v = {"scope": parts[0], "models": dict(p.split("=", 1) for p in parts[1:])}
+        if scope not in ("", "-") and v["scope"] != scope:
+            continue
+        if any(v["models"].get(c) != m for c, m in want.items()):
+            continue
+        variants.append(v)
+    show = lambda v: v["scope"] + "".join(f" {c}={m}" for c, m in v["models"].items())
+    if not variants:
+        print(f"COMPONENTS: BLOCKED template {Path(tdir).name} implements only: "
+              + " | ".join(" ".join(p) for p in lines) + " - its main.c files are written for those")
+        return 1
+    if len(variants) > 1:
+        print("ACTION: CHOOSE variant (ask the user: which cores run the app, bare metal or FreeRTOS on "
+              "each): " + " | ".join(show(v) for v in variants) + "  -> new_app.sh --scope S --model cm33=..,cm55=..")
+        return 2
+    v = variants[0]
+    sc = scopes(comps).get(v["scope"])
+    if not sc:
+        print(f"COMPONENTS: BLOCKED unknown core scope '{v['scope']}' (have: {', '.join(scopes(comps))})")
+        return 1
+    owner = sc[0]
+    ids = [owner["id"]]
+    for core in owner.get("app_cores", []):
+        model = v["models"].get(core, "baremetal")
+        cid = f"{model}-{core.split('_')[0]}"
+        if cid not in comps:
+            print(f"COMPONENTS: BLOCKED no execution model component '{cid}' for {core}")
+            return 1
+        ids.append(cid)
+    kind = owner.get("needs_kind")
+    if not (kind and any(comps.get(g, {}).get("kind") == kind for g in given)):
+        ids += owner.get("default_with", [])
+    print(f"VARIANT: {show(v)}")
+    print("IDS: " + " ".join(ids))
+    return 0
 
 
 def main(argv):
@@ -342,19 +455,10 @@ def main(argv):
                 for core, job in c.get("scope_jobs", {}).items():
                     print(f"      {core:8s} {job}")
         return 0
-    if cmd == "scope-ids" and rest:
-        # exec component(s) for a scope + its default IPC template unless one is already given
-        cs = scopes(comps).get(rest[0])
-        if not cs:
-            print(f"COMPONENTS: BLOCKED unknown core scope '{rest[0]}' (have: {', '.join(scopes(comps))})")
-            return 1
-        given = rest[1:]
-        ids = [cs[0]["id"]]
-        kind = cs[0].get("needs_kind")
-        if not (kind and any(comps.get(g, {}).get("kind") == kind for g in given)):
-            ids += cs[0].get("default_with", [])
-        print(" ".join(ids))
-        return 0
+    if cmd == "variant" and len(rest) >= 3:
+        return variant(comps, rest[0], rest[1], rest[2], rest[3:])
+    if cmd == "patch" and rest:
+        return patch_libs(rest[0], comps)
     if cmd == "show" and rest:
         c = comps.get(rest[0]) or sys.exit(f"unknown component '{rest[0]}'")
         print(json.dumps({k: v for k, v in c.items() if not k.startswith("_")} | {"pack": c["_pack"]},

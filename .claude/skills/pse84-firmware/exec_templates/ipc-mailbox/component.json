@@ -2,7 +2,7 @@
   "id": "ipc-mailbox",
   "layer": "exec",
   "kind": "ipc",
-  "status": "built",
+  "status": "verified",
   "cores": [
     "cm33_ns",
     "cm55"
@@ -15,7 +15,7 @@
     "components": [
       "ai-kit-board",
       "cm55-board",
-      "baremetal-dual"
+      "scope-dual"
     ],
     "parts": []
   },
@@ -31,6 +31,6 @@
       ]
     }
   },
-  "verified": "built 0-warning 2026-10-04; not run on KIT_PSE84_AI hardware",
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms) - first hardware run of the mailbox",
   "notes": "does not use mtb-ipc / SRF channel 0 or MTB_IPC_IRQ_USER..+3 (owned by the BSP); reference/layering.md 'Dual-core'"
 }

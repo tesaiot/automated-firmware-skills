@@ -112,6 +112,7 @@ BSP `KIT_PSE84_AI` 1.4.0, the Infineon kit guide and the TESAIoT SDK docs/source
 | Path | What | Who reads it |
 | --- | --- | --- |
 | [.claude/skills/pse84-firmware/](.claude/skills/pse84-firmware/SKILL.md) | **engine** skill: scripts, `exec_templates/` (core scopes cm33 / dual / cm55 + IPC), `func_templates/`, app `templates/` (incl. `sensors`), references | the agent (and you, for manual runs) |
+| [.claude/skills/web-wizard/](.claude/skills/web-wizard/SKILL.md) | **browser forms** instead of one-by-one console questions: new-app wizard (board, template, scope + bare metal/FreeRTOS per core, IPC, hardware, options, next step - gates checked live) and a generic question form | the agent when several choices are pending |
 | [.claude/skills/sensor-debug/](.claude/skills/sensor-debug/SKILL.md) | **PC-side sensor debugging**: `sensor_debug.py` drives the running app's console over the KitProg3 UART (diag, limits, sweeps, before/after stimulus tests, error-code table) and, on request, a live browser view of the readings (`sensor_dash.py`); never flashes | the agent while debugging / verifying sensors |
 | [.claude/skills/psoc-e84-ai-kit/](.claude/skills/psoc-e84-ai-kit/SKILL.md) | **SoM pack**: AI Kit on its own - board `kit-pse84-ai`, pins, `parts.json`, `bsp_templates/` | the agent, for AI Kit hardware code |
 | [.claude/skills/qwa309/](.claude/skills/qwa309/SKILL.md) | **base-board pack**: QWA309 - board `tesaiot`, base-board parts, pin conflicts, switch settings, `bsp_templates/` | the agent, for base-board hardware code |
@@ -129,6 +130,15 @@ A future SoM or base board = one more pack folder next to these; the engine find
 from whatever the skill tells it, so the skill holds only facts proven by the BSP, the schematic or
 a test on the board. Unresolved claims stay in `docs/` so the agent can't generate code against a
 wrong pin. Once an item is verified, it moves into the skill's board sheet.
+
+## Acknowledgements
+
+- **E84_TouchUI** (WheelSense project, TESA team, MIT) - <https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI>. Ideas and patterns reused here,
+  rewritten into this repo's components (never built on top of it): Windows-safe library patching
+  instead of bash PREBUILD, BMM350 address fallback, JSON-lines telemetry support in `sensor-debug`,
+  the pitfalls list in `pse84-firmware/reference/troubleshooting.md`. Planned next from the same
+  project: display/LVGL stack, Wi-Fi + MQTT, TFLM on Ethos-U55 (see `docs/jobs-to-be-done.md`).
+- Infineon ModusToolbox code examples and driver libraries (cited per component in `source`).
 
 ## License
 

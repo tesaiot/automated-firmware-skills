@@ -1,0 +1,34 @@
+{
+  "id": "scope-dual",
+  "layer": "exec",
+  "status": "verified",
+  "scope": "dual",
+  "needs_kind": "ipc",
+  "default_with": [
+    "ipc-mailbox"
+  ],
+  "scope_title": "CM33_NS + CM55 - both run application code; IPC template or ipc-none",
+  "scope_jobs": {
+    "cm33_ns": "board init, console UART, every peripheral it claims, boots CM55, client side of the IPC template",
+    "cm55": "compute (filters, DSP, ML, graphics) + its own claimed peripherals; worker side of the IPC template; no printf"
+  },
+  "app_cores": [
+    "cm33_ns",
+    "cm55"
+  ],
+  "parked": {},
+  "cores": [],
+  "summary": "core scope dual: application code on both cores; needs an IPC template (ipc-mailbox default) or ipc-none for independent jobs",
+  "provides": [
+    "scope"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board",
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms)",
+  "notes": "each core gets its own execution model (baremetal-* / freertos-*); every peripheral has one owner core"
+}

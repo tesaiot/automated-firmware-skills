@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New App Wizard</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d232b; --muted: #66707c; --line: #e2e5ea;
+    --accent: #1f6feb; --accent-bg: #eef4ff; --ok: #1a7f37; --bad: #cf222e; --warn: #9a6700;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1216; --panel: #171b21; --text: #e6e9ee; --muted: #8b95a1; --line: #2a3038;
+            --accent: #58a6ff; --accent-bg: #16243a; --ok: #3fb950; --bad: #f85149; --warn: #d29922; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px;
+         max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+          padding: 14px; margin-bottom: 14px; }
+  .card h2 { font-size: 14px; margin: 0 0 4px; }
+  .card .hint { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+  .choice { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line);
+            border-radius: 8px; padding: 9px 10px; cursor: pointer; min-width: 0; }
+  .choice:hover { border-color: var(--accent); }
+  .choice.on { border-color: var(--accent); background: var(--accent-bg); }
+  .choice.off { opacity: .55; cursor: not-allowed; }
+  .choice input { margin-top: 3px; }
+  .choice .t { font-weight: 600; overflow-wrap: anywhere; }
+  .choice .d { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .badge { font: 11px var(--mono); padding: 0 6px; border-radius: 999px; border: 1px solid var(--line);
+           margin-left: 4px; white-space: nowrap; }
+  .badge.verified { color: var(--ok); border-color: var(--ok); }
+  .badge.built { color: var(--accent); border-color: var(--accent); }
+  .badge.planned { color: var(--warn); border-color: var(--warn); }
+  label.field { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type=text] { width: 100%; font: 14px var(--mono); padding: 7px 9px; border-radius: 6px;
+         border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  input[type=text].bad { border-color: var(--bad); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 220px; min-width: 0; }
+  aside .sticky { position: sticky; top: 16px; }
+  pre { font: 12px/1.4 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; margin: 0;
+        background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  #check .pass { color: var(--ok); } #check .blk { color: var(--bad); } #check .act { color: var(--warn); }
+  .buttons { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  button { font: 13px system-ui, sans-serif; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .jobs { font-size: 12px; color: var(--muted); margin: 4px 0 0; padding-left: 16px; }
+  #done { display: none; text-align: center; padding: 60px 16px; }
+  #done h2 { font-size: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>New app wizard</h1>
+  <p>Choose once here instead of answering questions one by one in the console. Submit hands the answers back to Claude Code; nothing is built or flashed by this page.</p>
+</header>
+<main id="form">
+  <section>
+    <div class="card"><h2>1. Board</h2><p class="hint">Board type (hardware packs). A part of the base board is only available on a board made with that pack.</p><div class="choices" id="boards"></div></div>
+    <div class="card"><h2>2. App</h2>
+      <div class="row">
+        <div><label class="field" for="app">App name (letters, digits, - and _)</label><input type="text" id="app" placeholder="my-app"></div>
+      </div>
+      <p class="hint" style="margin-top:10px">Template (application layer; brings its own components)</p>
+      <div class="choices" id="templates"></div></div>
+    <div class="card"><h2>3. Cores and execution model</h2><p class="hint">Only the combinations this template's main.c files implement (scopes.txt). Bare metal = super-loop; FreeRTOS = tasks + kernel tick.</p><div class="choices" id="variants"></div><div id="jobs"></div></div>
+    <div class="card" id="ipcCard"><h2>4. Inter-core communication</h2><p class="hint">Scope dual needs an IPC template - or an explicit "independent cores" choice.</p><div class="choices" id="ipc"></div></div>
+    <div class="card"><h2>5. On-board hardware</h2><p class="hint">Drivers (bsp components) of the parts on this board. Planned ones are not implemented yet.</p><div class="choices" id="hw"></div></div>
+    <div class="card"><h2>6. Services</h2><p class="hint">Middleware and functions (func components) - later: display/LVGL, Wi-Fi/MQTT, web...</p><div class="choices" id="svc"></div></div>
+    <div class="card" id="optCard"><h2>7. Options</h2><div id="opts"></div></div>
+    <div class="card"><h2>8. What next</h2><div class="choices" id="actions"></div></div>
+  </section>
+  <aside><div class="sticky">
+    <div class="card"><h2>Command</h2><pre id="cmd"></pre></div>
+    <div class="card" id="notesCard" style="display:none"><h2>Not used by the template code</h2>
+      <p class="hint">Ticked parts are added as drivers only. Use a template that calls them, or keep them and let Claude write the calls after generation.</p>
+      <ul id="notes" class="jobs"></ul></div>
+    <div class="card"><h2>Gate check</h2><p class="hint">components.py check - the same gates new_app.sh runs.</p><pre id="check">not run yet</pre>
+      <div class="buttons"><button type="button" id="btnCheck">Check</button>
+        <button type="button" class="primary" id="btnSubmit">Submit</button>
+        <button type="button" id="btnCancel">Cancel</button></div></div>
+  </div></aside>
+</main>
+<div id="done"><h2 id="doneTitle">Sent to Claude Code</h2><p>You can close this tab and return to the conversation.</p></div>
+<script>
+"use strict";
+const ACTIONS = [
+  { id: "generate_vscode", t: "Generate, then open in VS Code", d: "Create the app and open it in VS Code + ModusToolbox extension. You build/flash/debug there." },
+  { id: "build", t: "Generate + build", d: "Create the app and build it (0-warning gate). No flashing." },
+  { id: "build_flash_test", t: "Generate + build + flash + test", d: "Also flash THIS board once and run the UART test. Choosing this approves that one flash." },
+];
+const S = { board: "", app: "", template: "", variant: 0, ipc: "ipc-mailbox", extra: new Set(), opts: {}, action: "generate_vscode", lastCheck: null };
+let D;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const badge = (st) => st ? `<span class="badge ${esc(st)}">${esc(st)}</span>` : "";
+
+function choice(container, { name, value, type = "radio", checked, disabled, title, desc, onchange }) {
+  const el = document.createElement("label");
+  el.className = "choice" + (checked ? " on" : "") + (disabled ? " off" : "");
+  el.innerHTML = `<input type="${type}" name="${esc(name)}" value="${esc(value)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>
+    <span><span class="t">${title}</span><br><span class="d">${desc || ""}</span></span>`;
+  if (!disabled) el.querySelector("input").addEventListener("change", (e) => onchange(e.target.checked));
+  container.appendChild(el);
+}
+
+const tpl = () => D.templates[S.template];
+const variant = () => tpl()?.variants[S.variant];
+const scopeOf = (v) => D.scopes[v.scope] || {};
+
+function modelIds(v) {
+  return (scopeOf(v).app_cores || []).map((core) => `${v.models[core] || "baremetal"}-${core.split("_")[0]}`);
+}
+
+function selectedIds() {
+  const v = variant();
+  if (!v) return [];
+  const ids = [...tpl().components, scopeOf(v).id, ...modelIds(v)];
+  if (v.scope === "dual") ids.push(S.ipc);
+  S.extra.forEach((x) => ids.push(x));
+  return [...new Set(ids)];
+}
+
+function optionComponents() {
+  return selectedIds().map((id) => D.components[id]).filter((c) => c && c.options);
+}
+
+function command() {
+  const v = variant();
+  if (!v) return "";
+  const parts = ["bash .claude/skills/pse84-firmware/scripts/new_app.sh", S.board, S.app || "<app>", '""', S.template,
+                 "--scope", v.scope, "--model", Object.entries(v.models).map(([c, m]) => `${c.split("_")[0]}=${m}`).join(",")];
+  const extra = [...S.extra];
+  if (v.scope === "dual" && S.ipc !== "ipc-mailbox") extra.push(S.ipc);
+  if (extra.length) parts.push("--components", extra.join(","));
+  Object.entries(S.opts).forEach(([k, val]) => parts.push("--opt", `${k}=${val}`));
+  return parts.join(" ");
+}
+
+function render() {
+  // 1 boards
+  $("boards").innerHTML = "";
+  Object.entries(D.boards).forEach(([id, b]) => choice($("boards"), { name: "board", value: id, checked: S.board === id,
+    title: esc(id), desc: esc(b.title), onchange: () => { S.board = id; S.extra.clear(); S.opts = {}; render(); } }));
+  // 2 templates
+  $("templates").innerHTML = "";
+  Object.entries(D.templates).forEach(([id, t]) => choice($("templates"), { name: "tpl", value: id, checked: S.template === id,
+    title: esc(id), desc: esc(t.description) + (t.requires.length ? `<br>needs parts: ${esc(t.requires.join(", "))}` : ""),
+    onchange: () => switchTemplate(id) }));
+  // 3 variants
+  $("variants").innerHTML = "";
+  (tpl()?.variants || []).forEach((v, i) => {
+    const sc = scopeOf(v);
+    const models = Object.entries(v.models).map(([c, m]) => `${c.toUpperCase()} ${m}`).join(" · ");
+    choice($("variants"), { name: "var", value: i, checked: S.variant === i,
+      title: `${esc(v.scope)} ${badge(sc.status)}`, desc: `${esc(models)}<br>${esc(sc.title)}`,
+      onchange: () => { S.variant = i; render(); } });
+  });
+  const v = variant();
+  $("jobs").innerHTML = v ? `<ul class="jobs">${Object.entries(scopeOf(v).jobs || {}).map(([c, j]) => `<li><b>${esc(c)}</b>: ${esc(j)}</li>`).join("")}</ul>` : "";
+  // 4 ipc
+  $("ipcCard").style.display = v && v.scope === "dual" ? "" : "none";
+  $("ipc").innerHTML = "";
+  Object.values(D.components).filter((c) => c.layer === "exec" && c.kind === "ipc").forEach((c) =>
+    choice($("ipc"), { name: "ipc", value: c.id, checked: S.ipc === c.id, disabled: c.status === "planned",
+      title: `${esc(c.id)} ${badge(c.status)}`, desc: esc(c.summary), onchange: () => { S.ipc = c.id; render(); } }));
+  // 5 hardware + 6 services
+  const groups = new Set(D.boards[S.board]?.groups || []);
+  const inTpl = new Set([...(tpl()?.components || []), ...D.base_ids, ...(D.boards[S.board]?.board_components || [])]);
+  const listFor = (el, filter) => {
+    el.innerHTML = "";
+    Object.values(D.components).filter(filter).sort((a, b) => (a.status === "planned") - (b.status === "planned") || a.id.localeCompare(b.id))
+      .forEach((c) => {
+        const fromTpl = inTpl.has(c.id);
+        const extra = !fromTpl && S.extra.has(c.id);
+        choice(el, { name: c.id, value: c.id, type: "checkbox", checked: fromTpl || S.extra.has(c.id),
+          disabled: fromTpl || c.status === "planned",
+          title: `${esc(c.id)} ${badge(c.status)}${fromTpl ? ' <span class="badge">included</span>' : ""}` +
+                 (extra ? ` <span class="badge planned">not used by ${esc(S.template)} code</span>` : ""),
+          desc: esc(c.summary) + (c.hw_settings ? `<br>needs: ${esc(c.hw_settings.join("; "))}` : ""),
+          onchange: (on) => { on ? S.extra.add(c.id) : S.extra.delete(c.id); render(); } });
+      });
+  };
+  listFor($("hw"), (c) => c.layer === "bsp" && c.group && groups.has(c.group));
+  listFor($("svc"), (c) => c.layer === "func");
+  // 7 options
+  const oc = optionComponents();
+  $("optCard").style.display = oc.length ? "" : "none";
+  $("opts").innerHTML = "";
+  oc.forEach((c) => Object.entries(c.options).forEach(([key, spec]) => {
+    const box = document.createElement("div");
+    box.innerHTML = `<p class="hint"><b>${esc(c.id)}</b> · ${esc(key)}: ${esc(spec.question || "")}</p><div class="choices"></div>`;
+    $("opts").appendChild(box);
+    const ch = box.querySelector(".choices");
+    if (!(key in S.opts) && spec.recommended) S.opts[key] = spec.recommended;
+    Object.entries(spec.choices || {}).forEach(([val, cv]) => choice(ch, { name: key, value: val, checked: S.opts[key] === val,
+      title: esc(val) + (val === spec.recommended ? ' <span class="badge verified">recommended</span>' : ""), desc: esc(cv.label),
+      onchange: () => { S.opts[key] = val; render(); } }));
+    if (spec.custom) {
+      const isCustom = String(S.opts[key] || "").startsWith("custom:");
+      const wrap = document.createElement("div");
+      wrap.style.marginTop = "8px";
+      wrap.innerHTML = `<label class="field">custom:&lt;offset&gt;,&lt;size&gt; - ${esc(spec.custom.why || "")}</label><input type="text" placeholder="custom:0x02000000,0x00100000" value="${isCustom ? esc(S.opts[key]) : ""}">`;
+      wrap.querySelector("input").addEventListener("change", (e) => { if (e.target.value.trim()) { S.opts[key] = e.target.value.trim(); render(); } });
+      box.appendChild(wrap);
+    }
+  }));
+  Object.keys(S.opts).forEach((k) => { if (!oc.some((c) => c.options[k])) delete S.opts[k]; });
+  // 8 actions
+  $("actions").innerHTML = "";
+  ACTIONS.forEach((a) => choice($("actions"), { name: "act", value: a.id, checked: S.action === a.id, title: esc(a.t), desc: esc(a.d),
+    onchange: () => { S.action = a.id; render(); } }));
+  $("cmd").textContent = command();
+  renderNotes();
+  S.lastCheck = null;
+}
+
+/* Components ticked on top of the template are only compiled in: the template's main.c does
+ * not call them. Say so, and offer templates whose code already uses them. */
+function usedBy(cid) {
+  return Object.entries(D.templates).filter(([, t]) => t.components.includes(cid)).map(([n]) => n);
+}
+
+function unused() {
+  const inTpl = new Set(tpl()?.components || []);
+  return [...S.extra].filter((cid) => !inTpl.has(cid));
+}
+
+function switchTemplate(name) {
+  S.template = name;
+  S.variant = 0;
+  D.templates[name].components.forEach((cid) => S.extra.delete(cid));   // now part of the template
+  render();
+}
+
+function renderNotes() {
+  const list = unused();
+  $("notesCard").style.display = list.length ? "" : "none";
+  $("notes").innerHTML = list.map((cid) => {
+    const alt = usedBy(cid).filter((n) => n !== S.template);
+    return `<li><b>${esc(cid)}</b> - driver compiled in, but <b>${esc(S.template)}</b>'s main.c does not call it.` +
+      (alt.length ? `<br>Templates that use it: ${alt.map((n) => `<button type="button" data-tpl="${esc(n)}">use ${esc(n)}</button>`).join(" ")}`
+                  : "<br>No template uses it yet - Claude can add the calls to the app code after generation.") + "</li>";
+  }).join("");
+  $("notes").querySelectorAll("button[data-tpl]").forEach((b) => { b.onclick = () => switchTemplate(b.dataset.tpl); });
+}
+
+function appValid() {
+  const ok = /^[A-Za-z0-9_-]+$/.test(S.app);
+  $("app").classList.toggle("bad", !ok);
+  return ok;
+}
+
+async function check() {
+  const r = await fetch("/check", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ board: S.board, ids: selectedIds(), opts: S.opts }) });
+  const j = await r.json();
+  S.lastCheck = j;
+  $("check").innerHTML = j.lines.map((l) => `<span class="${l.includes("PASS") ? "pass" : l.includes("BLOCKED") ? "blk" : l.startsWith("ACTION") ? "act" : ""}">${esc(l)}</span>`).join("\n") || "(no output)";
+  return j.rc === 0;
+}
+
+async function submit() {
+  if (!appValid()) { $("app").focus(); return; }
+  if (!(await check())) return;            // never hand back a selection the gates refuse
+  const v = variant();
+  const answers = { mode: "project", board: S.board, app: S.app, template: S.template, scope: v.scope,
+    models: v.models, ipc: v.scope === "dual" ? S.ipc : null, components: [...S.extra], options: S.opts,
+    action: S.action, ids: selectedIds(), command: command(), check: S.lastCheck,
+    unused: unused().map((cid) => ({ id: cid, used_by_templates: usedBy(cid) })) };
+  await fetch("/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(answers) });
+  $("form").style.display = "none"; $("done").style.display = "block";
+}
+
+async function cancel() {
+  await fetch("/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  $("doneTitle").textContent = "Cancelled"; $("form").style.display = "none"; $("done").style.display = "block";
+}
+
+(async () => {
+  D = await (await fetch("/data.json")).json();
+  S.board = D.default_board; S.app = D.default_app; $("app").value = S.app;
+  S.template = D.templates["hello-world"] ? "hello-world" : Object.keys(D.templates)[0];
+  $("app").addEventListener("input", (e) => { S.app = e.target.value.trim(); appValid(); $("cmd").textContent = command(); });
+  $("btnCheck").onclick = check; $("btnSubmit").onclick = submit; $("btnCancel").onclick = cancel;
+  render();
+})();
+</script>
+</body>
+</html>

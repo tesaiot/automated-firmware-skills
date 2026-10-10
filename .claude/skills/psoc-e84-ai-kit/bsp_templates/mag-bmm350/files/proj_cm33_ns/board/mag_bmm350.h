@@ -3,10 +3,10 @@
 *
 * Layer 1 - BSP. Bosch BMM350 3-axis magnetometer (U20) of the PSOC Edge E84
 *   AI Kit. **I3C** (I3C_CORE, P3.0 SCL / P3.1 SDA, CYBSP_I3C_CONTROLLER),
-*   static address 0x15, MAG_INT P6.4, 1.8 V. (I2C needs rework R220/R223.)
+*   static address 0x15 (init falls back to 0x14), MAG_INT P6.4, 1.8 V. (I2C needs rework R220/R223.)
 * Backend: Infineon sensor-orientation-bmm350 COMPONENT_BMM350_I3C
 *   (mtb_bmm350_init_i3c / _read / _set_odr_performance / _selftest).
-*   Build: COMPONENTS+=BMM350_I3C and the PREBUILD bmm350_fix.bash step (Bosch
+*   Build: COMPONENTS+=BMM350_I3C and the component patch of bmm350.c (Bosch
 *   SensorAPI soft-reset drops the part back to I2C - library README).
 *   I3C open-drain rate is kept low (datasheet: SCL high >= 160 ns).
 * Units: field nT (1 uT = 1000 nT), temperature m°C, integers.

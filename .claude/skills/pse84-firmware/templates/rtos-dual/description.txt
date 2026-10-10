@@ -1,0 +1,1 @@
+FreeRTOS on CM33_NS (console + blink tasks) and CM55 (mailbox worker task); ping/uptime/led55 over ipc-mailbox (scope dual)

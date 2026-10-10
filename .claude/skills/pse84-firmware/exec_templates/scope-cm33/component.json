@@ -1,0 +1,30 @@
+{
+  "id": "scope-cm33",
+  "layer": "exec",
+  "status": "verified",
+  "scope": "cm33",
+  "scope_title": "CM33_NS only - CM55 parked",
+  "scope_jobs": {
+    "cm33_ns": "everything: board init, console UART, sensors/peripherals, application logic (super-loop)",
+    "cm55": "booted by board_start_cm55(), runs the vendor idle loop (deep sleep) - no app code"
+  },
+  "app_cores": [
+    "cm33_ns"
+  ],
+  "parked": {
+    "cm55": "idle"
+  },
+  "cores": [],
+  "summary": "core scope cm33: application code on CM33_NS only; CM55 booted and parked in the vendor idle loop",
+  "provides": [
+    "scope"
+  ],
+  "requires": {
+    "components": [
+      "ai-kit-board"
+    ],
+    "parts": []
+  },
+  "verified": "2026-10-10 tesaiot: hello-world, blink, push-to-light (as 'baremetal')",
+  "notes": "pick the CM33_NS execution model separately (baremetal-cm33 | freertos-cm33)"
+}

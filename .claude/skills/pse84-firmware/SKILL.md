@@ -6,7 +6,8 @@ description: End-to-end firmware workflow engine for Infineon PSOC Edge E84 (PSE
 # PSOC Edge E84 firmware workflow
 
 Six gated stages plus a clean step. Do them in order; do not start a stage until the previous
-gate passed. Each stage has a script in `scripts/` and details in `reference/`.
+gate passed. Each stage has a script in `scripts/` and details in `reference/`. Known pitfalls with fixes: `reference/troubleshooting.md` (check it before debugging a
+build or sensor failure; add new ones).
 **Windows + Git Bash only** (Claude's Bash tool is Git Bash; in PowerShell `bash` may be WSL).
 
 ```
@@ -110,20 +111,38 @@ Two more component rules (`components.py check`, also run by `new_app.sh`):
 
 ## Core-scope and option gates (ask the user, never pick silently)
 
-**Core scope** = which cores run application code. Exactly one per app; `new_app.sh --scope`:
+**Core scope** = which cores run application code; **execution model** = bare metal or FreeRTOS,
+chosen **per application core**. Both are the user's choice (`new_app.sh --scope S --model
+cm33=..,cm55=..`, or the `web-wizard` project form). Details + known issues: `reference/exec-models.md`.
 
-| Scope | Exec component | CM33_NS job | CM55 job | Status |
-| --- | --- | --- | --- | --- |
-| `cm33` | `baremetal-cm33` | everything: init, console UART, sensors/peripherals, logic (super-loop) | booted, parked in the vendor idle loop | verified |
-| `dual` | `baremetal-dual` + an **IPC template** (`ipc-mailbox` default; `ipc-pipes` planned) | init, console, the peripherals it claims, boots CM55, IPC client | compute (filters, DSP, ML, graphics) + its own claimed peripherals, IPC worker, no printf | built |
-| `cm55` | `baremetal-cm55` | boot shim only (clocks CM55 needs, start CM55, sleep) | everything incl. console | planned |
+| Scope (component) | CM33_NS job | CM55 job | Status |
+| --- | --- | --- | --- |
+| `cm33` (`scope-cm33`) | everything: init, console UART, sensors/peripherals, logic | booted, parked (`idle`) | verified |
+| `dual` (`scope-dual` + IPC: `ipc-mailbox` default, `ipc-none` = independent jobs) | init, console, its claimed peripherals, boots CM55, IPC client | compute + its claimed peripherals, IPC worker, no printf | verified |
+| `cm55` (`scope-cm55`) | boot shim only (`boot`) | everything incl. console | planned |
 
-- Each template lists the scopes its `main.c` files implement in `scopes.txt`; one entry = used
-  automatically (`SCOPE: cm33 (the only ...)`), several = `new_app.sh` stops with
-  `ACTION: CHOOSE core scope` - **ask the user** with the job table above, then pass `--scope`.
-- `components.py` BLOCKS: no scope, two scopes, CM55 code under `cm33`, `dual` without an IPC
-  template, CM33_NS components other than the boot shim under `cm55`. `components.py scopes` prints
-  the table. Every peripheral still has one owner core (`claims`).
+Models per core: `baremetal-cm33` (verified) / `freertos-cm33` (verified), `baremetal-cm55`
+(built) / `freertos-cm55` (verified). Under FreeRTOS on CM33 the kernel owns SysTick and
+`board_millis()` is the kernel tick (0 until the scheduler starts); ISRs that call kernel APIs need
+NVIC priority >= 2 (CM33) / >= 1 (CM55).
+
+- Each template lists the variants its `main.c` files implement in `scopes.txt`, one per line:
+  `dual cm33_ns=freertos cm55=freertos`. `components.py variant` / `new_app.sh` pick the line
+  matching `--scope`/`--model`; one fitting line = used automatically, several = `ACTION: CHOOSE
+  variant` - **ask the user** (console questions or the `web-wizard` form), none = refused.
+- `components.py` BLOCKS: no/two scopes, an application core without a model, a model or app/driver
+  code on a parked core, `dual` without an IPC template (or `ipc-none`), a func/bsp component not
+  tested under the chosen model (`exec_models`). `components.py scopes` prints the jobs.
+- `pse84-app.env` records `APP_SCOPE` and `APP_MODELS`.
+
+**Several choices at once:** when a new app needs several decisions (board, template, scope,
+models, hardware, options, next step), offer the `web-wizard` skill (one browser form, gates
+checked live) or console questions - the user picks once per session.
+
+**Library patches:** a component may declare `"patches"` (regex text edits of a vendor library
+in `mtb_shared`, e.g. `mag-bmm350` → Bosch `bmm350.c`). `build.sh` applies them after getlibs via
+`components.py patch <app>` (idempotent, keeps line endings, no bash PREBUILD - works on Windows).
+`PATCH: BLOCKED` = the library changed: re-check the fix, never force it.
 
 **Component options:** a component may need a choice the user must make (`"options"` in its
 manifest). Missing → `COMPONENTS: BLOCKED ... needs option <key>` + `ACTION: CHOOSE <key> ...` with
@@ -213,8 +232,8 @@ Read `reference/layering.md` before writing code. Rules:
   component = `component.json` + `files/` (mirrors the app tree):
   `bsp_templates/` in the **hardware packs** (`psoc-e84-ai-kit`: `ai-kit-board` = board.h API,
   `cm55-board`; `qwa309`: `qwa309-board` = qwa309.h), `func_templates/` here (services/middleware:
-  `led`, `button`, `console`), `exec_templates/` here (core scope + IPC: `baremetal-cm33`,
-  `baremetal-dual`, `baremetal-cm55`, `ipc-mailbox`). A board's `BOARD_COMPONENTS` are added
+  `led`, `button`, `console`), `exec_templates/` here (core scope, execution models + IPC: `scope-cm33`,
+  `scope-dual`, `scope-cm55`, `baremetal-*`, `freertos-*`, `ipc-mailbox`, `ipc-none`). A board's `BOARD_COMPONENTS` are added
   automatically. `components.py list|show|check|apply|scopes` resolves requires, enforces the core
   scope, **one exec model per core**, options, board parts and refuses `planned` components
   (`--allow-planned` only while implementing one). An app template (`templates/<app>/`) holds only
@@ -235,7 +254,9 @@ Read `reference/layering.md` before writing code. Rules:
   `rate <ms>`, `scan`, `reinit`, `selftest`, `magrate`. Debug it from the PC with the
   `sensor-debug` skill; its live preview (`sensor_dash.py --app <app>`, on request only) charts the
   readings in the browser using the template's `tests/liveview.json`.
-- `dual-core-ipc` (scope dual; CM33 console + CM55 worker over a shared-memory
+- `rtos-dual` (scope dual, FreeRTOS on both cores): CM33 console + blink tasks, CM55 mailbox worker
+  task; `tasks`, `blink`, `ping <n>`, `uptime` (both kernel uptimes), `led55`. Verified 11/11.
+- `dual-core-ipc` (scope dual, bare metal on both; CM33 console + CM55 worker over a shared-memory
   mailbox: `ipc?`, `ping <n>`, `led55 <1|2> on|off`; component `ipc-mailbox` adds `<app>/shared`
   and `INCLUDES+=../shared` to both cores). `help.sh` lists templates from `description.txt`.
 - Multi-core work (CM55 owns a peripheral, IPC mailbox): reference/layering.md "Dual-core".

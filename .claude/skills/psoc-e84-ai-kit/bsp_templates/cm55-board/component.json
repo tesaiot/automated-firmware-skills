@@ -1,7 +1,7 @@
 {
   "id": "cm55-board",
   "layer": "bsp",
-  "status": "built",
+  "status": "verified",
   "cores": [
     "cm55"
   ],
@@ -15,5 +15,5 @@
     "parts": []
   },
   "claims": [],
-  "verified": "built 0-warning 2026-10-04 (dual-core-ipc); not run on KIT_PSE84_AI hardware"
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms) (board55 LED write/read)"
 }

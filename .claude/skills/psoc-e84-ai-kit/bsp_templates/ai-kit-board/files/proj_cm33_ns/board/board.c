@@ -79,14 +79,21 @@ static const char *const btn_names[] = { BOARD_BTN_NAMES };
 #define BTN_NAME_COUNT  ((uint32_t)(sizeof(btn_names) / sizeof(btn_names[0])))
 #endif
 
-/* 1 ms time base. SysTick runs from the CPU clock and stops in Deep Sleep;
- * the template's main loop never sleeps. */
+/* 1 ms time base, owned by the CM33_NS execution model:
+ * - bare metal (baremetal-cm33): SysTick here; it stops in Deep Sleep, the main loop never sleeps
+ * - FreeRTOS (freertos-cm33, COMPONENT_FREERTOS): the kernel owns SysTick (port handler); time
+ *   comes from the tick count, which stays 0 until vTaskStartScheduler() */
+#if defined(COMPONENT_FREERTOS)
+#include "FreeRTOS.h"
+#include "task.h"
+#else
 static volatile uint32_t ms_ticks;
 
 void SysTick_Handler(void)   /* overrides the weak default in the BSP startup */
 {
     ms_ticks++;
 }
+#endif
 
 void board_fatal(void)
 {
@@ -108,10 +115,12 @@ void board_init(void)
                                  1UL, HSIOM_SEL_GPIO);
         }
     }
+#if !defined(COMPONENT_FREERTOS)
     if (0U != SysTick_Config(SystemCoreClock / 1000U))
     {
         board_fatal();
     }
+#endif
     __enable_irq();
     init_retarget_io();   /* SCB2 debug UART + printf */
     for (uint32_t i = 0U; i < LED_COUNT; i++)
@@ -128,12 +137,23 @@ void board_start_cm55(void)
 
 void board_delay_ms(uint32_t ms)
 {
+#if defined(COMPONENT_FREERTOS)
+    if (taskSCHEDULER_RUNNING == xTaskGetSchedulerState())
+    {
+        vTaskDelay(pdMS_TO_TICKS(ms));      /* yields to other tasks */
+        return;
+    }
+#endif
     Cy_SysLib_Delay(ms);
 }
 
 uint32_t board_millis(void)
 {
+#if defined(COMPONENT_FREERTOS)
+    return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+#else
     return ms_ticks;
+#endif
 }
 
 uint32_t board_led_count(void)

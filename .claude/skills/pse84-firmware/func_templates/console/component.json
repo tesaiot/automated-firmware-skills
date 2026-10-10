@@ -16,7 +16,9 @@
     "parts": []
   },
   "exec_models": [
-    "baremetal"
+    "baremetal",
+    "freertos"
   ],
-  "verified": "2026-10-10 tesaiot bring-up (push-to-light 15/16 auto + SW1 interactive)"
+  "verified": "2026-10-10 tesaiot bring-up (push-to-light 15/16 auto + SW1 interactive); freertos: rtos-dual 11/11 2026-10-10",
+  "notes": "freertos: call the poll function from one task only (not thread-safe across tasks)"
 }

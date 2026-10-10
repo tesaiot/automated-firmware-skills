@@ -1,0 +1,2 @@
+# core scope + execution model per core this template implements (new_app.sh --scope/--model)
+dual cm33_ns=freertos cm55=freertos

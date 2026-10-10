@@ -1,2 +1,2 @@
-# core scopes this template supports (new_app.sh --scope)
-cm33
+# core scope + execution model per core this template implements (new_app.sh --scope/--model)
+cm33 cm33_ns=baremetal

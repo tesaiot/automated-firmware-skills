@@ -51,6 +51,8 @@ contract), the `.c` comes with the implementation. Conventions: `<pack>/bsp_temp
               "custom": {"align": "0x40000", "min_offset": "...", "max_end": "...", "defines": {}}}},
   "exec_models": ["baremetal", "freertos"],       // func/bsp: models it can run under
   "conflicts": ["other-id"],
+  "patches": [{"lib": "BMM350_SensorAPI", "file": "bmm350.c", "find_re": "...", "replace": "...",
+               "applied_re": "...", "why": "...", "source": "..."}],   // vendor-library fixes (build.sh)
   "mtb_deps": {"proj_cm33_ns": {"freertos": "https://github.com/Infineon/freertos#release-vX#$$ASSET_REPO$$/freertos/release-vX"}},
   "makefile": {"proj_cm33_ns": {"COMPONENTS": ["FREERTOS"], "DEFINES": [], "INCLUDES": ["../shared"]}},
   "source": "where the code came from (repo + path + commit)",

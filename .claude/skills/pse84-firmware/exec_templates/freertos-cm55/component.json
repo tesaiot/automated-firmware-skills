@@ -1,13 +1,13 @@
 {
   "id": "freertos-cm55",
   "layer": "exec",
-  "status": "planned",
+  "status": "verified",
   "cores": [
     "cm55"
   ],
-  "summary": "FreeRTOS on CM55 (LVGL / ML / radar run as tasks); _BAREMETAL=0 for graphics",
+  "summary": "CM55 FreeRTOS 10.6: tasks + 1 kHz tick on the CM55 SysTick, heap_3, MVE off",
   "provides": [
-    "freertos-cm55"
+    "exec-cm55"
   ],
   "requires": {
     "components": [
@@ -28,12 +28,14 @@
       "COMPONENTS": [
         "FREERTOS",
         "RTOS_AWARE"
-      ],
-      "DEFINES": [
-        "CY_RTOS_AWARE"
       ]
     }
   },
-  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo (proj_cm55 FreeRTOSConfig.h)",
-  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/FreeRTOSConfig.h (min stack 512 words, MAX_SYSCALL 0x20)"
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo (proj_cm55/include/FreeRTOSConfig.h)",
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/FreeRTOSConfig.h (min stack 512 words, MAX_SYSCALL 0x20)",
+  "claims": [
+    "SysTick-CM55"
+  ],
+  "notes": "ISRs that call FreeRTOS APIs need NVIC priority >= 1 (configMAX_SYSCALL_INTERRUPT_PRIORITY 0x20); no printf on CM55 (console belongs to CM33_NS)",
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms)"
 }

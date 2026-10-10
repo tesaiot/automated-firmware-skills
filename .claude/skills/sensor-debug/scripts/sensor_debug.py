@@ -112,8 +112,43 @@ class Console:
 
 
 # ---------------------------------------------------------------- parsing + stats
+# JSON-lines telemetry as printed by the E84_TouchUI / WheelSense firmware
+# (https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI):
+#   {"sensor":"sht4x","t_cx100":2512,"h_rhx100":4630,"seq":7}   {"sensor":"dps368","error":"init failed"}
+# key = <name>_<unit>[x<scale>]  ->  field <name>, value / scale, unit from JSON_UNITS
+JSON_UNITS = {"c": "C", "rh": "%", "pct": "%", "hpa": "hPa", "pa": "Pa", "g": "g", "mg": "mg",
+              "dps": "dps", "mdps": "mdps", "ut": "uT", "nt": "nT", "lux": "lux", "ms": "ms", "v": "V", "mv": "mV"}
+JSON_KEY_RE = re.compile(r"^(?P<name>[a-z0-9_]+?)_(?P<unit>[a-z]+?)(?:x(?P<scale>\d+))?$")
+JSON_META = {"sensor", "tag", "seq", "t", "ts", "time"}
+
+
+def parse_json(line):
+    try:
+        obj = json.loads(line)
+    except ValueError:
+        return None
+    tag = str(obj.get("sensor") or obj.get("tag") or "").upper() if isinstance(obj, dict) else ""
+    if not tag:
+        return None
+    if "error" in obj:
+        return ("err", tag, str(obj["error"]).replace(" ", "_"), None)
+    kv = {}
+    for k, v in obj.items():
+        if k in JSON_META or isinstance(v, bool) or not isinstance(v, (int, float)):
+            continue
+        m = JSON_KEY_RE.match(k)
+        if m and m.group("unit") in JSON_UNITS:
+            kv[m.group("name")] = (v / int(m.group("scale") or 1), JSON_UNITS[m.group("unit")])
+        else:
+            kv[k] = (float(v), "")
+    return ("data", tag, kv) if kv else None
+
+
 def parse(line):
-    """('data', tag, {field: (value, unit)}) | ('err', tag, status, rslt) | None"""
+    """('data', tag, {field: (value, unit)}) | ('err', tag, status, rslt) | None
+    Understands "<TAG> key=<num><unit>" lines and JSON-lines telemetry (parse_json)."""
+    if line.startswith("{"):
+        return parse_json(line)
     m = ERR_RE.match(line)
     if m and m.group(1) not in SKIP_TAGS:
         return ("err", m.group(1), m.group(2), m.group(3))

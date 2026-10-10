@@ -31,9 +31,6 @@
     "proj_cm33_ns": {
       "COMPONENTS": [
         "BMM350_I3C"
-      ],
-      "PREBUILD": [
-        "bash $(SEARCH_sensor-orientation-bmm350)/COMPONENT_BMM350_I3C/bmm350_fix.bash \"$(SEARCH_BMM350_SensorAPI)/bmm350.c\""
       ]
     }
   },
@@ -44,7 +41,18 @@
     "P6.4"
   ],
   "source": "https://github.com/Infineon/sensor-orientation-bmm350 COMPONENT_BMM350_I3C (mtb_bmm350.h; README quick start: Cy_I3C_Init + mtb_bmm350_init_i3c)",
-  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_bmm350.c (PURE mode + SETAASA; redo SETAASA after reset)",
-  "notes": "PREBUILD runs the library's bmm350_fix.bash (comments out the Bosch soft-reset line that drops the part to I2C) - it edits BMM350_SensorAPI/bmm350.c in mtb_shared; I2C mode needs rework R220/R223",
-  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); reads + self-test OK; ~2.5 mT board-fixed offset (rotation changes only 12-28 uT) - needs hard-iron calibration"
+  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/mpy/sensor_bmm350.c (PURE mode + SETAASA; redo SETAASA after reset); E84_TouchUI app_sensor/bmm350/bmm350_driver.c (static cy_stc_i3c_device_t, tries both I3C addresses) - https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI",
+  "notes": "Bosch API fix applied by components.py patch (build.sh, after getlibs) - edits BMM350_SensorAPI/bmm350.c in mtb_shared; init tries static address 0x15 then 0x14 (strap/rework); I2C mode needs rework R220/R223",
+  "verified": "2026-10-10 tesaiot (AI Kit on QWA309), app sensors scope cm33: tests/sensors.json 17/17 PASS (logs/serial-sensors-5.log); reads + self-test OK; ~2.5 mT board-fixed offset (rotation changes only 12-28 uT) - needs hard-iron calibration; 2026-10-10 re-test after address fallback + components.py patch (no PREBUILD): app sensors2 17/17 PASS, diag PASS (self-test OK)",
+  "patches": [
+    {
+      "lib": "BMM350_SensorAPI",
+      "file": "bmm350.c",
+      "find_re": "^(?P<ind>[ \t]*)soft_reset = BMM350_CMD_SOFTRESET;",
+      "replace": "\\g<ind>// soft_reset = BMM350_CMD_SOFTRESET;  /* pse84-firmware patch: keep I3C mode */",
+      "applied_re": "^[ \t]*//[ \t]*soft_reset = BMM350_CMD_SOFTRESET;",
+      "why": "Bosch soft reset in bmm350_init drops the part back to I2C (Infineon sensor-orientation-bmm350 README, bmm350_fix.bash)",
+      "source": "https://github.com/Infineon/sensor-orientation-bmm350 COMPONENT_BMM350_I3C/bmm350_fix.bash; Windows-safe alternative to a bash PREBUILD as done in E84_TouchUI (https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI, docs/EXTENDING.md 4.7)"
+    }
+  ]
 }

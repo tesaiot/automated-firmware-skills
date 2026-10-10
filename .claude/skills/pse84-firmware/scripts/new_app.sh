@@ -11,9 +11,11 @@
 #                  The example's own code is kept (no layered template on top).
 #   --components a,b   extra components on top of the template's components.txt
 #                  (ids: components.py list; resolved + gated before anything is created)
-#   --scope cm33|dual|cm55   core scope = which cores run app code (components.py scopes).
-#                  Must be one the template lists in scopes.txt; optional when it lists only one.
-#                  dual adds the default IPC template (ipc-mailbox) unless --components has one.
+#   --scope cm33|dual|cm55   core scope = which cores run app code (components.py scopes)
+#   --model cm33=baremetal|freertos[,cm55=baremetal|freertos]   execution model per core
+#                  Both must match a line of the template's scopes.txt ("dual cm33_ns=freertos
+#                  cm55=baremetal"); optional when only one line fits. dual adds the default IPC
+#                  template (ipc-mailbox) unless --components has one (ipc-none = independent cores).
 #   --allow-planned    accept planned components (only while implementing them; never for users)
 #   --opt key=value    component option, e.g. --opt flash_area=fs-10mb (qspi-flash); repeatable.
 #                  A component option left open blocks with ACTION: CHOOSE (ask the user).
@@ -26,13 +28,14 @@
 # Writes <app>/pse84-app.env (board, template, versions, hashes) and logs into <app>/logs/.
 
 . "$(dirname "$0")/env.sh"
-POS=(); EXAMPLE=""; EXCOMMIT=""; EXTRA_COMPONENTS=""; SCOPE=""; OPTS=()
+POS=(); EXAMPLE=""; EXCOMMIT=""; EXTRA_COMPONENTS=""; SCOPE=""; MODEL=""; OPTS=()
 DEFAULT_COMPONENTS="ai-kit-board console led button"   # templates without components.txt
 while [ $# -gt 0 ]; do
   case "$1" in
     --example) EXAMPLE="$2"; shift;; --example-commit) EXCOMMIT="$2"; shift;;
     --components) EXTRA_COMPONENTS="$2"; shift;;
     --scope) SCOPE="$2"; shift;;
+    --model) MODEL="$2"; shift;;
     --allow-planned) OPTS+=(--allow-planned);;   # only while developing a planned component
     --opt) case "$2" in *=*) OPTS+=(--opt "$2");; *) die "--opt needs key=value";; esac; shift;;
     --*) die "unknown option $1";;
@@ -55,31 +58,27 @@ require_safe_path "$APPDIR" "app"
 if [ "$TPL" != none ] && [ -f "$SKILL_DIR/templates/$TPL/requires.txt" ]; then
   "$PYTHON" "$SKILL_DIR/scripts/board_gate.py" check "$BOARD_ID" $(grep -v '^#' "$SKILL_DIR/templates/$TPL/requires.txt")     || die "template '$TPL' needs parts board '$BOARD_ID' does not have (GATE: BLOCKED above)"
 fi
-# Core-scope gate: which cores run app code (cm33 | dual | cm55). The template lists the scopes
-# its main.c files implement (scopes.txt); the user chooses when there is more than one.
+# Core-scope + execution-model gate: which cores run app code (cm33 | dual | cm55) and whether each
+# runs bare metal or FreeRTOS. The template lists the variants its main.c files implement
+# (scopes.txt); the user chooses when more than one fits.
 SCOPE_IDS=""
 if [ "$TPL" != none ]; then
   T="$SKILL_DIR/templates/$TPL"
-  tpl_scopes="$(grep -v '^#' "$T/scopes.txt" 2>/dev/null | tr '\n' ' ' | xargs)"
-  if [ -z "$SCOPE" ]; then
-    if [ -n "$tpl_scopes" ] && [ "$(echo $tpl_scopes | wc -w)" = 1 ]; then
-      SCOPE="$tpl_scopes"; echo "SCOPE: $SCOPE (the only core scope template '$TPL' supports)"
-    else
-      "$PYTHON" "$SKILL_DIR/scripts/components.py" scopes
-      echo "ACTION: CHOOSE core scope (ask the user): new_app.sh ... --scope <${tpl_scopes// /|}>"
-      die "template '$TPL' supports several core scopes (${tpl_scopes:-any}) - none chosen"
-    fi
-  elif [ -n "$tpl_scopes" ] && ! printf ' %s ' $tpl_scopes | grep -q " $SCOPE "; then
-    die "template '$TPL' implements scope(s) '$tpl_scopes', not '$SCOPE' (its main.c files are for those)"
+  var="$("$PYTHON" "$SKILL_DIR/scripts/components.py" variant "$(winpath "$T")" "${SCOPE:--}" "${MODEL:--}" ${EXTRA_COMPONENTS//,/ })"; rc=$?
+  var="${var//$'\r'/}"
+  printf '%s\n' "$var" | grep -v '^IDS: '
+  if [ $rc = 2 ]; then
+    "$PYTHON" "$SKILL_DIR/scripts/components.py" scopes
+    die "template '$TPL' has several scope/model variants - none chosen (ACTION: CHOOSE above)"
   fi
+  [ $rc = 0 ] || die "no matching scope/model variant in template '$TPL' (COMPONENTS: BLOCKED above)"
+  SCOPE="$(printf '%s\n' "$var" | sed -n 's/^VARIANT: \([a-z0-9]*\).*/\1/p')"
+  SCOPE_IDS="$(printf '%s\n' "$var" | sed -n 's/^IDS: //p')"
   [ "$SCOPE" = cm33 ] && [ -d "$T/proj_cm55" ] && die "scope cm33 parks CM55, but template '$TPL' has proj_cm55 code"
   case "$SCOPE" in dual|cm55) [ -f "$T/proj_cm55/main.c" ] || die "scope $SCOPE needs a proj_cm55/main.c in template '$TPL'";; esac
-  SCOPE_IDS="$("$PYTHON" "$SKILL_DIR/scripts/components.py" scope-ids "$SCOPE" ${EXTRA_COMPONENTS//,/ })" \
-    || die "unknown core scope '$SCOPE' (components.py scopes)"
-  SCOPE_IDS="${SCOPE_IDS//$'\r'/}"
   echo "SCOPE: $SCOPE -> $SCOPE_IDS"
-elif [ -n "$SCOPE" ]; then
-  die "--scope needs a layered template (not --example / none)"
+elif [ -n "$SCOPE$MODEL" ]; then
+  die "--scope / --model need a layered template (not --example / none)"
 fi
 # Components gate (fast, before Project Creator): requires, scope, exec model per core, board parts,
 # options, status
@@ -171,6 +170,18 @@ if [ -n "$BSP_BASE_MODUS_SHA256" ] && [ "$base" != "$BSP_BASE_MODUS_SHA256" ]; t
      The overlay is only valid on the old base - re-port it (reference/project.md 'Porting a BSP delta')."
   echo "WARN: base design.modus differs from profile - review GeneratedSource before flashing"
 fi
+# Tools vs design.modus: a design.modus saved by a newer ModusToolbox (newer cydesignfile schema)
+# cannot be read/regenerated by older tools (pitfall seen in E84_TouchUI, docs/EXTENDING.md 4.6)
+modus_tools="$(sed -n 's/.*toolsPackage="ModusToolbox \([0-9][0-9.]*\)".*/\1/p' "$BSP/config/design.modus" | head -1)"
+have_tools="$(basename "$MTB_TOOLS_DIR" | sed 's/^tools_//')"
+if [ -n "$modus_tools" ] && [ -n "$have_tools" ]; then
+  need="$(echo "$modus_tools" | cut -d. -f1-2)"
+  oldest="$(printf '%s\n%s\n' "$have_tools" "$need" | sort -V | head -1)"
+  [ "$oldest" = "$have_tools" ] && [ "$have_tools" != "$need" ] && \
+    die "BSP design.modus was saved with ModusToolbox $modus_tools but the tools here are $have_tools -
+     install ModusToolbox >= $need (or pin an older BSP). Never re-save design.modus with a newer configurator."
+  info "design.modus saved with ModusToolbox $modus_tools (tools here: $have_tools)"
+fi
 
 # 5. overlays (before regeneration)
 cp "$BSP/config/design.modus" "$APPDIR/logs/design.modus.base"
@@ -205,7 +216,7 @@ if [ -n "$BSP_OVERLAY_MODUS$BSP_OVERLAY_EXTRA" ] || [ "${BSP_SOURCE:-vendor}" !=
 fi
 
 # 7. components (bsp_templates/ func_templates/ exec_templates/) + app template + board define
-APP_COMPONENTS=""; APP_HW_SETTINGS=""; APP_SCOPE="${SCOPE:-none}"; APP_OPTIONS=""
+APP_COMPONENTS=""; APP_HW_SETTINGS=""; APP_SCOPE="${SCOPE:-none}"; APP_MODELS=""; APP_OPTIONS=""
 if [ "$TPL" != none ]; then
   T="$SKILL_DIR/templates/$TPL"
   comps="$(grep -v '^#' "$T/components.txt" 2>/dev/null | tr '\n' ' ')"
@@ -214,12 +225,13 @@ if [ "$TPL" != none ]; then
   [ -n "$EXTRA_COMPONENTS" ] && comps="$comps ${EXTRA_COMPONENTS//,/ }"
   info "Applying components: $comps (+ BOARD_COMPONENTS of $BOARD_ID)"
   out="$("$PYTHON" "$SKILL_DIR/scripts/components.py" apply "$(winpath "$APPDIR")" --board "$BOARD_ID" $comps "${OPTS[@]}" 2>&1)"; rc=$?
-  printf '%s\n' "$out" | grep -v '^APP_COMPONENTS=\|^APP_HW_SETTINGS=\|^APP_SCOPE=\|^APP_OPTIONS='
+  printf '%s\n' "$out" | grep -v '^APP_COMPONENTS=\|^APP_HW_SETTINGS=\|^APP_SCOPE=\|^APP_MODELS=\|^APP_OPTIONS='
   [ $rc = 0 ] || die "components gate failed (COMPONENTS: BLOCKED above) - nothing else applied"
   APP_COMPONENTS="$(printf '%s\n' "$out" | sed -n 's/^APP_COMPONENTS=//p')"
   APP_HW_SETTINGS="$(printf '%s\n' "$out" | sed -n 's/^APP_HW_SETTINGS=//p' | tr -d "'")"
   APP_SCOPE="$(printf '%s\n' "$out" | sed -n 's/^APP_SCOPE=//p')"
   APP_OPTIONS="$(printf '%s\n' "$out" | sed -n 's/^APP_OPTIONS=//p')"
+  APP_MODELS="$(printf '%s\n' "$out" | sed -n 's/^APP_MODELS=//p')"
   info "Applying template $TPL (application layer)"
   for proj in proj_cm33_s proj_cm33_ns proj_cm55; do
     [ -d "$T/$proj" ] && cp -r "$T/$proj/." "$APPDIR/$proj/"
@@ -245,6 +257,7 @@ APP_TEMPLATE=$TPL
 APP_COMPONENTS=${APP_COMPONENTS:-none}
 APP_HW_SETTINGS='${APP_HW_SETTINGS}'
 APP_SCOPE=${APP_SCOPE:-none}
+APP_MODELS='${APP_MODELS}'
 APP_OPTIONS='${APP_OPTIONS}'
 APP_EXAMPLE=${EXAMPLE:-none}
 APP_BSP=$BSP_ID ${bspver:-?} ($BSP_DIR)

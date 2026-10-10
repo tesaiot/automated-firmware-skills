@@ -49,8 +49,8 @@
 /* System */
 void     board_init(void);               /* cybsp_init, IRQs, console UART      */
 void     board_start_cm55(void);         /* boot the CM55 core (boot chain)     */
-void     board_delay_ms(uint32_t ms);
-uint32_t board_millis(void);             /* ms since board_init (SysTick 1 kHz) */
+void     board_delay_ms(uint32_t ms);        /* FreeRTOS: vTaskDelay once running */
+uint32_t board_millis(void);             /* ms tick: SysTick (bare metal) or kernel tick (FreeRTOS, 0 until the scheduler runs) */
 void     board_fatal(void);              /* stop execution on unrecoverable err */
 
 /* User LEDs, index 0..board_led_count()-1 (LED1 = index 0) */

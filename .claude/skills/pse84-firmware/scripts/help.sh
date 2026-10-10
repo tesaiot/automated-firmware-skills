@@ -37,7 +37,9 @@ PSOC Edge E84 firmware skill - what you can ask (say it in your own words)
   "create a hello-world app for tesaiot"   -> new_app.sh <board> <app> "" hello-world
   "start from the BLE Find Me example"     -> new_app.sh <board> <app> --example btstack-findme
   "write an app: press SW1, LED1 lights"   -> template + code in board/ func/ main.c layers
-  "which components exist?" / "add FreeRTOS" -> components.py list [--all] | check | new_app.sh --components
+  "which components exist?"               -> components.py list [--all] | scopes | check
+  "FreeRTOS on both cores" / "bare metal"  -> new_app.sh <board> <app> "" <template> --scope dual --model cm33=freertos,cm55=freertos
+  "open the wizard" / "ask me in a form"   -> web-wizard skill: wizard.py project --board <b>  (one browser form)
   "build it"                               -> build.sh <app>
   "open it in VS Code"                     -> open_ide.sh <app> [--refresh]
  Run on hardware (Claude asks before every flash)
@@ -64,7 +66,9 @@ skill pse84-firmware (PSOC Edge E84) - สั่ง Claude ได้ด้วย
   "สร้างแอป hello world ให้ tesaiot"          -> new_app.sh <board> <app> "" hello-world
   "เริ่มจาก example BLE Find Me"             -> new_app.sh <board> <app> --example btstack-findme
   "เขียนแอป กด SW1 แล้ว LED1 ติด"             -> template + โค้ดแบ่ง layer board/ func/ main.c
-  "มี component อะไรบ้าง" / "เพิ่ม FreeRTOS"     -> components.py list [--all] | check | new_app.sh --components
+  "มี component อะไรบ้าง"                     -> components.py list [--all] | scopes | check
+  "ใช้ FreeRTOS ทั้งสอง core"                    -> new_app.sh ... --scope dual --model cm33=freertos,cm55=freertos
+  "เปิดหน้าเว็บให้เลือก" / "ถามผ่านฟอร์ม"          -> web-wizard: wizard.py project --board <b>
   "build ให้หน่อย"                           -> build.sh <app>
   "เปิดใน VS Code"                           -> open_ide.sh <app> [--refresh]
  ใช้กับบอร์ดจริง (Claude จะขออนุญาตก่อน flash ทุกครั้ง)

@@ -1,0 +1,18 @@
+{
+  "title": "Bring-up choices",
+  "questions": [
+    {"id": "scope", "header": "Core scope", "question": "Which cores should run the application?",
+     "options": [
+       {"label": "CM33_NS only", "description": "Simplest; CM55 stays parked"},
+       {"label": "Both cores", "description": "CM33_NS I/O + CM55 compute, with an IPC template"}]},
+    {"id": "parts", "header": "Hardware", "question": "Which on-board parts should the app use?", "multi": true,
+     "options": [
+       {"label": "SHT40 humidity", "description": "SCB0 I2C @0x44"},
+       {"label": "BMI270 IMU", "description": "SCB0 I2C @0x68"},
+       {"label": "BMM350 magnetometer", "description": "I3C @0x15"}]},
+    {"id": "next", "header": "Next step", "question": "What should happen after the app is generated?", "other": false,
+     "options": [
+       {"label": "Open in VS Code", "description": "You build and flash there"},
+       {"label": "Build, flash and test", "description": "Claude runs the gated scripts"}]}
+  ]
+}

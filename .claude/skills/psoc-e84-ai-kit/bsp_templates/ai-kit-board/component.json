@@ -23,8 +23,8 @@
     "P10.7",
     "P20.4",
     "P20.5",
-    "P20.6",
-    "SysTick"
+    "P20.6"
   ],
-  "verified": "2026-10-10 tesaiot: hello-world, blink, push-to-light flashed + tested"
+  "verified": "2026-10-10 tesaiot: hello-world, blink, push-to-light flashed + tested; 2026-10-10 tick per exec model: rg2-sensors (bare metal) 17/17, rtos-dual (FreeRTOS) 11/11",
+  "notes": "1 ms tick comes from the CM33_NS execution model: SysTick here under baremetal-cm33, the kernel tick under freertos-cm33 (COMPONENT_FREERTOS); board_delay_ms() yields under FreeRTOS"
 }

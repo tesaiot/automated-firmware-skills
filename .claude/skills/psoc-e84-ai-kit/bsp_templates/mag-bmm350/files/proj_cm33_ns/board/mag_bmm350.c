@@ -65,14 +65,21 @@ static bsp_status_t i3c_start(void)
 
 bsp_status_t mag_init(void)
 {
-    i3c_dev = (cy_stc_i3c_device_t){ .staticAddress = MTB_BMM350_ADDRESS_SEC };
+    /* 0x15 = AI Kit default (ADSEL high); 0x14 if the strap/rework differs. Trying both
+     * follows E84_TouchUI app_sensor/bmm350/bmm350_driver.c (WheelSense project). */
+    static const uint8_t addrs[] = { MTB_BMM350_ADDRESS_SEC, MTB_BMM350_ADDRESS_DEFAULT };
     bsp_status_t s = i3c_start();
     if (BSP_OK != s)
     {
         return s;
     }
     ready = false;
-    cy_rslt_t r = mtb_bmm350_init_i3c(&dev, CYBSP_I3C_CONTROLLER_HW, &i3c_ctx, &i3c_dev);
+    cy_rslt_t r = CY_RSLT_TYPE_ERROR;
+    for (uint32_t i = 0U; (i < (sizeof(addrs) / sizeof(addrs[0]))) && (CY_RSLT_SUCCESS != r); i++)
+    {
+        i3c_dev = (cy_stc_i3c_device_t){ .staticAddress = addrs[i] };
+        r = mtb_bmm350_init_i3c(&dev, CYBSP_I3C_CONTROLLER_HW, &i3c_ctx, &i3c_dev);
+    }
     if (CY_RSLT_SUCCESS != r)
     {
         last_rslt = (uint32_t)r;

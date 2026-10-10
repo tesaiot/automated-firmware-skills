@@ -135,8 +135,42 @@ function field(tag, key, unit) {
   return fields.get(id);
 }
 
+// JSON-lines telemetry (E84_TouchUI / WheelSense firmware, github.com/NnopponS/WheelSense_Project):
+// {"sensor":"sht4x","t_cx100":2512} -> SHT4X.t = 25.12 C ; same rules as sensor_debug.py parse_json
+const JSON_UNITS = { c: "C", rh: "%", pct: "%", hpa: "hPa", pa: "Pa", g: "g", mg: "mg", dps: "dps",
+                     mdps: "mdps", ut: "uT", nt: "nT", lux: "lux", ms: "ms", v: "V", mv: "mV" };
+const JSON_META = new Set(["sensor", "tag", "seq", "t", "ts", "time"]);
+function onJson(t, line) {
+  let o;
+  try { o = JSON.parse(line); } catch (e) { return false; }
+  const tag = o && typeof o === "object" ? String(o.sensor || o.tag || "").toUpperCase() : "";
+  if (!tag) return false;
+  if ("error" in o) {
+    const g = group(tag);
+    g.err.hidden = false;
+    g.err.textContent = `${new Date(t * 1000).toLocaleTimeString()}  ERR ${o.error}`;
+    logLine(line, "e");
+    return true;
+  }
+  let n = 0;
+  for (const [k, v] of Object.entries(o)) {
+    if (JSON_META.has(k) || typeof v !== "number") continue;
+    const m = k.match(/^([a-z0-9_]+?)_([a-z]+?)(?:x(\d+))?$/);
+    const known = m && JSON_UNITS[m[2]];
+    const f = field(tag, known ? m[1] : k, known ? JSON_UNITS[m[2]] : "");
+    f.pts.push([t, known ? v / Number(m[3] || 1) : v]);
+    while (f.pts.length && f.pts[0][0] < t - WINDOW_S) f.pts.shift();
+    n++;
+  }
+  if (!n) return false;
+  group(tag).err.hidden = true;
+  logLine(line, "d");
+  return true;
+}
+
 function onLine(t, line) {
   lines++;
+  if (line.startsWith("{") && onJson(t, line)) return;
   const err = line.match(/^([A-Z][A-Z0-9_]*) ERR (\S+)(.*)$/);
   if (err && !SKIP.has(err[1])) {
     const g = group(err[1]);

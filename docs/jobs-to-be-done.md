@@ -23,6 +23,21 @@ and gets it built, flashed and tested on the board, with every pin coming from a
 3. **Publish a corrected pinout** (rev1 image v2) generated from `boards/tesaiot/README.md`, so the
    image and the skill can't drift apart.
 
+## Now - reuse from E84_TouchUI (<https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI>)
+
+- [x] 2026-10-10 step 1: library `patches` (Windows-safe, replaces the BMM350 bash PREBUILD),
+  BMM350 address fallback, JSON-lines in `sensor-debug` + live view, `reference/troubleshooting.md`,
+  `design.modus` tools-version check in `new_app.sh`. Re-tested on TESAIoT: `sensors2` 17/17 PASS.
+- [x] 2026-10-10 `ipc-none` for independent cores. [ ] component options carry Makefile keys
+  (`CY_IGNORE`, `COMPONENTS`).
+- [x] 2026-10-10 FreeRTOS on CM33_NS + CM55 (`freertos-cm33/cm55`, scope/model split, `rtos-dual`
+  11/11 on TESAIoT); open issues in `pse84-firmware/reference/exec-models.md` (portable app contract,
+  tickless/low power, IPC semaphore, irq-priority check). `web-wizard` skill (project + ask forms).
+- [ ] step 3: `freertos-cm55` → `display-dsi` (3 panels via `display_panel` option) + `lvgl-ui`
+  (lv_conf, ports, Infineon VGLite overrides, Noto Sans Thai) + `lvgl-app` template (`ui_main(parent)`).
+- [ ] step 4: `radio-cyw55513` on either core + `wifi-mqtt`; `ml-tflm-u55` (model `.incbin`, int8
+  check script).
+
 ## Next - pack hygiene
 
 - Move the SW4/SW5 table entries out of `ai-kit-board`'s board.c into `qwa309-board` (a board-extras

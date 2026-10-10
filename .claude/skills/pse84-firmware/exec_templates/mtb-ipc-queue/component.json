@@ -13,8 +13,9 @@
   ],
   "requires": {
     "components": [
+      "scope-dual",
       "freertos-cm33",
-      "cm55-board"
+      "freertos-cm55"
     ],
     "parts": []
   },

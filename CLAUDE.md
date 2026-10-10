@@ -15,8 +15,10 @@
   the matching open question from `docs/hardware/tesaiot-pinout-crosscheck.md`.
 - `apps/` and `keepout/` are never committed (see `.gitignore`); neither are probe serials, COM ports
   or flash dumps.
-- **Core scope is the user's choice** (cm33 | dual | cm55, `new_app.sh --scope`); so are component
-  options such as the `qspi-flash` `flash_area`. On `ACTION: CHOOSE` ask - never pick silently.
+- **Core scope and the execution model per core are the user's choice** (`new_app.sh --scope
+  cm33|dual|cm55 --model cm33=baremetal|freertos,cm55=...`); so are component options such as the
+  `qspi-flash` `flash_area`. On `ACTION: CHOOSE` ask - never pick silently. With several open
+  choices offer the `web-wizard` browser form or console questions.
 - Sensor problems on hardware: use the `sensor-debug` skill (PC drives the console; no flashing);
   physical stimulus tests need the user - ask for one action at a time. Open the browser live
   view (`sensor_dash.py`) only when the user asks; stop it afterwards (it holds the COM port).

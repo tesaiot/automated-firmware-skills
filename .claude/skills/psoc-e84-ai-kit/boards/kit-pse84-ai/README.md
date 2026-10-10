@@ -85,3 +85,5 @@ J17 Hirose DF40C-20DP-0.4V (not fitted on the AI Kit) = analog-capable P15.0-P15
   42.0 °C, BMI270 |a| = 992 mg at rest, BMM350 on I3C reads + self-test OK. BMM350 shows a constant
   ~2.5 mT offset that turns with the board (90° flat turn changed x/y/z by 12-28 µT only) - hard-iron
   calibration needed; open: does it come from the AI Kit or from the QWA309 underneath (test a bare kit).
+- 2026-10-10 `sensors2` (same kit): BMM350 with the address fallback and the Bosch fix applied by
+  `components.py patch` (no bash PREBUILD) - 17/17 PASS, `sensor-debug diag` PASS, self-tests OK.

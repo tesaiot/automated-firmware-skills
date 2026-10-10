@@ -1,22 +1,19 @@
 {
   "id": "freertos-cm33",
   "layer": "exec",
-  "status": "planned",
+  "status": "verified",
   "cores": [
     "cm33_ns"
   ],
-  "summary": "FreeRTOS 10.6 on CM33_NS: tasks, 1 kHz tick, heap; board_millis() from the RTOS tick",
+  "summary": "CM33_NS FreeRTOS 10.6: tasks + 1 kHz tick (SysTick), heap_3 (newlib), board_millis()/board_delay_ms() follow the kernel tick",
   "provides": [
-    "freertos-cm33"
+    "exec-cm33"
   ],
   "requires": {
     "components": [
       "ai-kit-board"
     ],
     "parts": []
-  },
-  "exec_model": {
-    "cm33_ns": "freertos"
   },
   "mtb_deps": {
     "proj_cm33_ns": {
@@ -28,16 +25,17 @@
       "COMPONENTS": [
         "FREERTOS",
         "RTOS_AWARE"
-      ],
-      "DEFINES": [
-        "CY_RTOS_AWARE"
       ]
     }
   },
-  "source": "https://github.com/Infineon/mtb-example-psoc-edge-imu-bmi270-freertos (FreeRTOSConfig.h: TRUSTZONE 0, MPU 0, FPU 1, TICK 1000)",
+  "source": "https://github.com/Infineon/mtb-example-psoc-edge-imu-bmi270-freertos (proj_cm33_ns/FreeRTOSConfig.h, main.c: Cy_SysEnableCM55 before vTaskStartScheduler)",
   "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm33_ns/FreeRTOSConfig.h (heap_3, 7 priorities, stack check 2, MAX_SYSCALL 0x40)",
-  "notes": "needs files/proj_cm33_ns/include/FreeRTOSConfig.h; ai-kit-board owns SysTick for board_millis() - add BOARD_TICK_FROM_RTOS before 'built'; func components then add 'freertos' to exec_models after a test",
+  "notes": "app main.c creates tasks then vTaskStartScheduler(); board_millis() is 0 until the scheduler runs; ISRs that call FreeRTOS *FromISR APIs need NVIC priority >= 2 (configMAX_SYSCALL_INTERRUPT_PRIORITY 0x40, 3 priority bits); tickless idle off (needs the LPTimer setup of the CE)",
   "claims": [
-    "SysTick"
-  ]
+    "SysTick-CM33"
+  ],
+  "exec_model": {
+    "cm33_ns": "freertos"
+  },
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms)"
 }

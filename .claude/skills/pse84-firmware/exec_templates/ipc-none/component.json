@@ -1,0 +1,24 @@
+{
+  "id": "ipc-none",
+  "layer": "exec",
+  "kind": "ipc",
+  "status": "built",
+  "cores": [],
+  "summary": "explicit choice for scope dual: the cores run independent jobs and exchange no data (e.g. CM33 = BLE, CM55 = UI/sensors as in E84_TouchUI)",
+  "provides": [
+    "ipc"
+  ],
+  "requires": {
+    "components": [
+      "scope-dual"
+    ],
+    "parts": []
+  },
+  "conflicts": [
+    "ipc-mailbox",
+    "ipc-pipes",
+    "mtb-ipc-queue"
+  ],
+  "source": "core split of E84_TouchUI (https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI): CM33_NS BLE task, CM55 everything else, no IPC",
+  "notes": "no files; peripherals still have one owner core (claims); a later data exchange needs a real IPC template"
+}

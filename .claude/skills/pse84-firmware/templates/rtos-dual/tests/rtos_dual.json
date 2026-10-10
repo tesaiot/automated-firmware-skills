@@ -1,0 +1,16 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info: FreeRTOS on both cores", "send": "info", "expect_re": ["^INFO app=rtos-dual .*cm33_ns=freertos cm55=freertos cm55_ready=1"]},
+    {"name": "CM33 tasks running",  "send": "tasks", "expect_re": ["^TASKS n=([4-9]|\\d\\d) console_free=\\d+B blink_free=\\d+B"]},
+    {"name": "blink task counts",   "send": "blink", "expect_re": ["^BLINK count=[1-9]\\d* period_ms=500"]},
+    {"name": "CM55 ping",           "send": "ping 41", "expect_re": ["^OK ping arg=41 result=42 rtt_ms=\\d+"]},
+    {"name": "CM55 kernel uptime",  "send": "uptime", "expect_re": ["^UPTIME cm33_ms=[1-9]\\d* cm55_ms=[1-9]\\d* rtt_ms=\\d+"]},
+    {"name": "CM55 drives LED2 on", "send": "led55 2 on", "expect": ["OK led55 led=2 state=on"]},
+    {"name": "CM55 drives LED2 off","send": "led55 2 off", "expect": ["OK led55 led=2 state=off"]},
+    {"name": "bad LED",             "send": "led55 9 on", "expect": ["ERR led55 cm55 bad arg"]},
+    {"name": "console alive",       "send": "foo", "expect": ["ERR unknown command"]}
+  ]
+}

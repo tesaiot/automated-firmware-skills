@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d232b; --muted: #66707c; --line: #e2e5ea;
+    --accent: #1f6feb; --accent-bg: #eef4ff; --bad: #cf222e;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1216; --panel: #171b21; --text: #e6e9ee; --muted: #8b95a1; --line: #2a3038;
+            --accent: #58a6ff; --accent-bg: #16243a; --bad: #f85149; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  main { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+          padding: 14px; margin-bottom: 14px; }
+  .card .hdr { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .card h2 { font-size: 15px; margin: 2px 0 10px; }
+  .card.missing { border-color: var(--bad); }
+  .choice { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line);
+            border-radius: 8px; padding: 9px 10px; cursor: pointer; margin-bottom: 6px; }
+  .choice:hover { border-color: var(--accent); }
+  .choice.on { border-color: var(--accent); background: var(--accent-bg); }
+  .choice input { margin-top: 3px; }
+  .choice .t { font-weight: 600; }
+  .choice .d { color: var(--muted); font-size: 12px; }
+  input[type=text] { width: 100%; font: 14px system-ui, sans-serif; padding: 7px 9px; border-radius: 6px;
+         border: 1px solid var(--line); background: var(--bg); color: var(--text); margin-top: 4px; }
+  .buttons { display: flex; gap: 8px; }
+  button { font: 13px system-ui, sans-serif; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #done { display: none; text-align: center; padding: 60px 16px; }
+</style>
+</head>
+<body>
+<header><h1 id="title">Questions</h1><p>Answer all questions on one page; Submit hands them back to Claude Code.</p></header>
+<main id="form"><div id="qs"></div>
+  <div class="buttons"><button type="button" class="primary" id="btnSubmit">Submit</button><button type="button" id="btnCancel">Cancel</button></div>
+</main>
+<div id="done"><h2 id="doneTitle">Sent to Claude Code</h2><p>You can close this tab and return to the conversation.</p></div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let Q = [];
+
+function build(spec) {
+  if (spec.title) { $("title").textContent = spec.title; document.title = spec.title; }
+  Q = spec.questions || [];
+  Q.forEach((q, i) => {
+    const id = q.id || `q${i + 1}`, type = q.multi ? "checkbox" : "radio";
+    const card = document.createElement("div");
+    card.className = "card"; card.id = `card-${id}`;
+    card.innerHTML = `<div class="hdr">${esc(q.header || "")}</div><h2>${esc(q.question)}</h2>` +
+      (q.options || []).map((o, j) => `<label class="choice"><input type="${type}" name="${esc(id)}" value="${j}">
+        <span><span class="t">${esc(o.label)}</span><br><span class="d">${esc(o.description || "")}</span></span></label>`).join("") +
+      (q.other !== false ? `<input type="text" name="${esc(id)}-other" placeholder="Other (optional)">` : "");
+    card.querySelectorAll("input[type=radio],input[type=checkbox]").forEach((inp) => inp.addEventListener("change", () =>
+      card.querySelectorAll(".choice").forEach((c) => c.classList.toggle("on", c.querySelector("input").checked))));
+    $("qs").appendChild(card);
+  });
+}
+
+function collect() {
+  const out = {}; let ok = true;
+  Q.forEach((q, i) => {
+    const id = q.id || `q${i + 1}`, card = $(`card-${id}`);
+    const picked = [...card.querySelectorAll(`input[name="${CSS.escape(id)}"]:checked`)].map((x) => q.options[+x.value].label);
+    const other = card.querySelector(`input[name="${CSS.escape(id + "-other")}"]`)?.value.trim() || "";
+    const answered = picked.length > 0 || other !== "";
+    card.classList.toggle("missing", !answered);
+    ok = ok && answered;
+    out[id] = { question: q.question, selected: q.multi ? picked : (picked[0] ?? null), other };
+  });
+  return ok ? out : null;
+}
+
+async function finish(path, body, title) {
+  await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  $("doneTitle").textContent = title; $("form").style.display = "none"; $("done").style.display = "block";
+}
+
+$("btnSubmit").onclick = () => { const a = collect(); if (a) finish("/submit", { mode: "ask", answers: a }, "Sent to Claude Code"); };
+$("btnCancel").onclick = () => finish("/cancel", {}, "Cancelled");
+fetch("/data.json").then((r) => r.json()).then(build);
+</script>
+</body>
+</html>

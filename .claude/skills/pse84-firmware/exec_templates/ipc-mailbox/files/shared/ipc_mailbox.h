@@ -30,6 +30,7 @@
 /* Requests (cmd) */
 #define IPC_CMD_PING        (1UL)    /* result = arg + 1                    */
 #define IPC_CMD_LED         (2UL)    /* arg = (led << 8) | on; result = readback */
+#define IPC_CMD_UPTIME      (3UL)    /* result = CM55 uptime in ms (its own tick; bare metal: IPC_ERR_CMD) */
 
 /* Replies (status) */
 #define IPC_OK              (0UL)

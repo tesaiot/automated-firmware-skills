@@ -60,7 +60,7 @@ against. Implementing it = adding the `.c` next to the header, wrapping the Infi
 
 1. `i2c-scb0` → `humidity-sht4x`, `pressure-dps368`, `imu-bmi270` (one bus, simple polling;
    test app `sensors` printing `ENV t=.. rh=.. p=..` / `IMU ax=..`).
-2. `mag-bmm350` (I3C + PREBUILD fix), `mic-pdm` (level meter test), `audio-tlv320dac3100`
+2. `mag-bmm350` (I3C + library patch), `mic-pdm` (level meter test), `audio-tlv320dac3100`
    (tone test; needs J8 + speaker).
 3. `psram`, `qspi-flash` (pattern tests), `radar-bgt60` (chip id + self-test, then frames).
 4. With `freertos-cm33` / `freertos-cm55`: `radio-cyw55513`, `display-dsi`, `camera-usb-uvc`

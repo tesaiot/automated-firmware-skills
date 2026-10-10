@@ -22,7 +22,17 @@ mkdir -p "$APPDIR/logs"; LOG="$APPDIR/logs/build-$(ts).log"
 M="$APPDIR/build/manifest.txt"; HEX="$APPDIR/build/app_combined.hex"
 rm -f "$M"                                   # no manifest unless this build passes
 [ $CLEAN = 1 ] && { info "make clean"; mtb_make "$APPDIR" clean >>"$LOG" 2>&1 || die "make clean failed ($LOG)"; }
-if [ $GETLIBS = 1 ] || [ ! -d "$APPDIR/../mtb_shared" ]; then
+# getlibs also when a project's deps/*.mtb is newer than its libs/mtb.mk (components added
+# libraries after the last getlibs - e.g. a fresh new_app.sh app)
+stale=""
+for proj in "$APPDIR"/proj_*/; do
+  for d in "$proj"deps/*.mtb; do
+    [ -f "$d" ] || continue
+    { [ ! -f "${proj}libs/mtb.mk" ] || [ "$d" -nt "${proj}libs/mtb.mk" ]; } && stale="$stale $(basename "$d" .mtb)"
+  done
+done
+[ -n "$stale" ] && info "libraries not fetched yet:$stale"
+if [ $GETLIBS = 1 ] || [ ! -d "$APPDIR/../mtb_shared" ] || [ -n "$stale" ]; then
   info "make getlibs"; mtb_make "$APPDIR" getlibs >>"$LOG" 2>&1 || die "getlibs failed ($LOG)"
 fi
 
@@ -30,6 +40,11 @@ fi
 # (e.g. QWA309 base-board pins in an app made for the bare AI Kit). board_gate.py, parts.json
 gate="$("$PYTHON" "$SKILL_DIR/scripts/board_gate.py" app "$(winpath "$APPDIR")" 2>&1)"   || { printf '%s
 ' "$gate"; echo "BUILD: BLOCKED (board scope)"; exit 1; }
+# Library patches declared by the app's components (component.json "patches"), applied to
+# mtb_shared after getlibs and before every build - idempotent, Windows-safe (no bash PREBUILD)
+patches="$("$PYTHON" "$SKILL_DIR/scripts/components.py" patch "$(winpath "$APPDIR")" 2>&1)" \
+  || { printf '%s\n' "$patches"; echo "BUILD: BLOCKED (library patch)"; exit 1; }
+printf '%s\n' "$patches" | grep -E '^PATCH: applied' || true
 info "make build -j8  (log $LOG)"
 marker="$(mktemp)"; t0=$SECONDS
 mtb_make "$APPDIR" build -j8 >>"$LOG" 2>&1; rc=$?

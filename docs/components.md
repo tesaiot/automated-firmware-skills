@@ -59,7 +59,7 @@ Research 2026-10-10:
 | `imu-bmi270` (imu_bmi270.h) @0x68 | **verified** | CM33_NS | sensors | `sensor-motion-bmi270` v1, ce:imu-bmi270-freertos | `sensor_bmi270.c` |
 | `humidity-sht4x` (humid_sht4x.h) @0x44 | **verified** | CM33_NS | sensors | `sensor-humidity-sht4x` v1 | `sensor_sht40.c` |
 | `pressure-dps368` (baro_dps368.h) @0x77 | **verified** | CM33_NS | sensors | `sensor-xensiv-dps3xx` v2 | `sensor_dps368.c`: temperature fix |
-| `mag-bmm350` (mag_bmm350.h) @0x15 I3C | **verified** | CM33_NS | sensors | `sensor-orientation-bmm350` v1 `BMM350_I3C` + PREBUILD fix | `sensor_bmm350.c`: SETAASA after reset |
+| `mag-bmm350` (mag_bmm350.h) @0x15 I3C | **verified** | CM33_NS | sensors | `sensor-orientation-bmm350` v1 `BMM350_I3C` + bmm350.c patch (components.py patch) | `sensor_bmm350.c`: SETAASA after reset |
 | `radar-bgt60` (radar_bgt60.h) | planned | CM33_NS (CM55 later) | radar | `sensor-xensiv-bgt60trxx` v2 edge iface, ce:ml-deepcraft-deploy-radar | `bento_bgt60trxx_platform.c`: bounded SPI wait |
 | `mic-pdm` (mic_pdm.h) 2x IM73D122 | planned | CM33_NS | mics | PDL PDM-PCM, ce:pdm-pcm | - (SDK `audio_pdm.c` excluded) |
 | `audio-tlv320dac3100` (audio_out.h) @0x18 + I2S TDM0 | planned | CM33_NS | audio | `audio-codec-tlv320dac3100` v1, ce:i2s; needs J8 + speaker | - |
@@ -83,11 +83,13 @@ AI Kit bsp APIs (headers in each component's `files/`, conventions and order):
 
 | Component | Status | Cores | Notes |
 | --- | --- | --- | --- |
-| `baremetal-cm33` (scope cm33) | **verified** | CM33_NS (CM55 parked) | super-loop, `board_millis()` from a 1 ms SysTick |
-| `baremetal-dual` (scope dual) | built | both | super-loop per core + an IPC template (default `ipc-mailbox`) |
-| `baremetal-cm55` (scope cm55) | planned | CM55 (CM33_NS boot shim) | needs CM55 console + drivers ported to proj_cm55 |
-| `ipc-mailbox` | built | both | shared-memory mailbox (top of `m33_m55_shared`); not run on this hardware yet |
-| `freertos-cm33` / `freertos-cm55` | planned | one each | `ai-kit-board` must take its tick from the RTOS first; func components add `freertos` to `exec_models` only after a test |
+| `scope-cm33` / `scope-dual` / `scope-cm55` | **verified** / **verified** / planned | - | core scope: which cores run app code (`--scope`) |
+| `baremetal-cm33` | **verified** | CM33_NS | super-loop, `board_millis()` from a 1 ms SysTick |
+| `freertos-cm33` | **verified** | CM33_NS | FreeRTOS 10.6, kernel owns SysTick, `board_millis()` = kernel tick (rtos-dual 11/11) |
+| `baremetal-cm55` | built | CM55 | super-loop, busy-wait delays |
+| `freertos-cm55` | **verified** | CM55 | FreeRTOS 10.6 on the CM55 SysTick, MVE off (rtos-dual 11/11) |
+| `ipc-none` | built | - | scope dual with independent cores (no data exchange; E84_TouchUI split) |
+| `ipc-mailbox` | **verified** | both | shared-memory mailbox (top of `m33_m55_shared`); first hardware run 2026-10-10 (rtos-dual) |
 | `ipc-pipes` | planned | both | PDL `Cy_IPC_Pipe`, ce:ipc-pipes (AI kit listed); SDK guideline `ipc_communication.*`: init semaphores once |
 | `mtb-ipc-queue` | planned | both | RTOS-aware queues on a non-BSP channel |
 | `scb5-lock` | planned | both | IPC hardware semaphore around SCB5 when both cores use it; quiesce SCB IRQs before unlock |

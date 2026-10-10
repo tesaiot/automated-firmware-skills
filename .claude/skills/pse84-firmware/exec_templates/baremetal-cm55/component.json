@@ -1,38 +1,23 @@
 {
   "id": "baremetal-cm55",
   "layer": "exec",
-  "status": "planned",
-  "scope": "cm55",
-  "scope_title": "CM55 only - CM33_NS is a boot shim",
-  "scope_jobs": {
-    "cm33_ns": "boot shim: cybsp init, enable clocks the CM55 needs (GFXSS, SAR), start CM55, deep sleep - no console, no peripherals",
-    "cm55": "everything: console UART, peripherals, application logic"
-  },
+  "status": "built",
   "cores": [
-    "cm33_ns",
     "cm55"
   ],
-  "summary": "scope cm55: CM33_NS boots CM55 and sleeps; the app (console + drivers) runs on CM55",
+  "summary": "CM55 bare metal: super-loop in proj_cm55/main.c (busy-wait delays, no tick)",
   "exec_model": {
-    "cm33_ns": "boot",
     "cm55": "baremetal"
   },
-  "scope_allows": {
-    "cm33_ns": [
-      "ai-kit-board",
-      "qwa309-board"
-    ]
-  },
   "provides": [
-    "exec"
+    "exec-cm55"
   ],
   "requires": {
     "components": [
-      "ai-kit-board",
       "cm55-board"
     ],
     "parts": []
   },
-  "source": "Infineon ML examples run their app on CM55 with retarget-io there (e.g. mtb-example-psoc-edge-ml-deepcraft-deploy-vision proj_cm55/source/retarget_io_init.c)",
-  "notes": "to implement: files/proj_cm33_ns/main.c boot shim; ai-kit-board switch BOARD_CONSOLE_ON_CM55 (skip SCB2 init); cm55-board console + millis; bsp drivers ported to proj_cm55 (cores [cm33_ns, cm55])"
+  "verified": "built 0-warning (dual-core-ipc); not run on hardware",
+  "notes": "no files"
 }
