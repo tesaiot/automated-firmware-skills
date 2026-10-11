@@ -44,12 +44,22 @@ How to run it for the user:
 1. Only on request. Start it in the background (`run_in_background: true`); it opens the user's
    default browser (`--no-open` + the built-in browser pane when you need to look yourself).
 2. Tell the user the URL, that it holds the COM port, and how to stop it.
-3. While it runs, the port is busy: no `sensor_debug.py`, `serial_test.py` or UART test after a
-   flash. Commands from you go through it: `curl -s -X POST -d '{"cmd":"rate 200"}'
-   http://127.0.0.1:8765/cmd` (the reply appears in the page).
-4. Stop it (TaskStop / Ctrl+C) when the user is done or before any other serial tool; say so.
-Good pairing: ask for one physical action from the stimulus table while the user watches the
-chart, then stop the live view and confirm with `snapshot` / `diff`.
+3. **Raw data first - you handle the data, the page only views it.** The bridge tees every board
+   line (`<`), command (`>`) and status/marker (`#`) with a timestamp into a raw log
+   (`<app>/logs/liveview-<time>.log`, `--log F` to choose) before the page sees it. Read that log;
+   never stop the view or ask the user what the page shows to get data.
+   `dash_ctl.py` talks to the running bridge from another shell:
+   ```bash
+   CTL=.claude/skills/sensor-debug/scripts/dash_ctl.py
+   python $CTL cmd "ezreport 200" "info"          # console commands (POST /cmd)
+   python $CTL mark SW1                           # '# mark SW1' in the raw log (POST /mark)
+   python $CTL --app apps/<app> log --tail 20 --grep "CAPS|EVT"
+   ```
+   For "what changes when the user does X": mark the phase **before** asking for the action, keep
+   rest phases and a positive control, then `hw-troubleshooting/scripts/phase_diff.py <raw.log>`.
+4. While it runs, the port is busy: no `sensor_debug.py`, `serial_test.py` or UART test after a
+   flash. Flashing (SWD) works while it runs; the bridge reconnects.
+5. Stop it (TaskStop / Ctrl+C) when the user is done or before any other serial tool; say so.
 
 Adapting the template to an app (no code change; the page follows the console protocol):
 - Ship `templates/<app>/tests/liveview.json` (copied into the app by `new_app.sh`); `--app` picks it
@@ -136,7 +146,8 @@ Adapting the template to an app (no code change; the page follows the console pr
 | Path | Content |
 | --- | --- |
 | `scripts/sensor_debug.py` | the tool (stdlib + pyserial) |
-| `scripts/sensor_dash.py` + `web/index.html` | live preview template: serial → local server → one browser page (SSE) |
+| `scripts/sensor_dash.py` + `web/index.html` | live preview template: serial → local server → one browser page (SSE); raw log tee, `POST /cmd`, `POST /mark` |
+| `scripts/dash_ctl.py` | commands, phase marks and raw-log reading for a running live view |
 | `web/config.json` | default page settings (title, chart window, quick buttons, units, tag order) |
 | `limits/ai-kit-at-rest.json` | AI Kit sensors on a desk: ranges and noise limits |
 | `reference/result_codes.json` | status names + raw codes → explanation (extend it) |

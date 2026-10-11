@@ -1,0 +1,9 @@
+{
+  "_doc": "Live view for pin-watch (sensor_dash.py --app). BTN btn1..btnN = 1 while pressed (names/pins: 'buttons'). EVT and PINCHG lines go to the log; PINCHG P<port>.<pin>=0|1 names the MCU pin of any input that changes - press 'watch arm' first so unused pins have their input buffer on. The bridge keeps the raw log (<app>/logs/liveview-*.log).",
+  "title": "Buttons + pin watch",
+  "window_s": 60,
+  "quick": ["watch arm", "watch reset", "watch disarm", "buttons", "btn?", "report on", "report off", "info", "help"],
+  "units": {},
+  "skip_tags": ["OK", "ERR", "INFO", "READY", "EVT", "PINCHG", "BUTTON", "PIN", "LED"],
+  "order": ["BTN"]
+}

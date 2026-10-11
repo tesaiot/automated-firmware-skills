@@ -186,11 +186,13 @@ needing admin rights yourself. **Gate:** `missing/bad=0`; report every WARN (ref
    - **Gate:** `IDENTITY: PASS` + `Saved ...`. On FAIL stop and report (wrong board/probe, probe
      busy in another tool, locked chip). Re-run after changing board or USB port.
    - No board yet? Skip to step 2 - creating and building need no hardware.
-2. **Create the app:** `bash "$SKILL/scripts/new_app.sh" <board-id> <app-name> [<workspace>] [template] [--scope cm33|dual|cm55] [--opt key=value] [--components a,b]`
+2. **Create the app:** `bash "$SKILL/scripts/new_app.sh" <board-id> <app-name> [<workspace>] [template] [--scope cm33|dual|cm55] [--model cm33=baremetal|freertos[,cm55=...]] [--opt key=value] [--components a,b]`
    - clones the pinned template app, Project Creator with the base BSP (auto-detects the BSP
      folder), optional pinned BSP replacement (`BSP_SOURCE=git:...`), checks BSP version and the
      **base `design.modus` sha256**, applies overlays (hash-checked), regenerates
      `GeneratedSource/`, copies the code template, adds and verifies `-DBOARD_<ID>`.
+   - `WARN: ... is in a Dropbox/OneDrive folder` is advice only: pause sync if getlibs/build fail on
+     locked files.
    - **Gate:** ends with `Created ...`. Read library versions later in `build/manifest.txt`
      (library drift, reference/project.md).
    - **From a ModusToolbox code example:** `new_app.sh <board-id> <app> [<workspace>] --example <id>`
@@ -256,6 +258,14 @@ Read `reference/layering.md` before writing code. Rules:
   readings in the browser using the template's `tests/liveview.json`.
 - `rtos-dual` (scope dual, FreeRTOS on both cores): CM33 console + blink tasks, CM55 mailbox worker
   task; `tasks`, `blink`, `ping <n>`, `uptime` (both kernel uptimes), `led55`. Verified 11/11.
+- `lvgl-ui-app` (scope dual, bare metal on both; display): the UI comes from `ui/ui.json`, generated
+  as static C by the `ui-designer` skill (browser editor + this session as the AI designer);
+  console `ui`/`uitree`/`uiset`/`uiclick` check it over the mailbox - verified 2026-10-11
+- `lvgl-demo` (scope dual, bare metal on both; board tesaiot or a kit with a Waveshare 4.3" DSI):
+  CM33 console + `gfx` status over the mailbox, CM55 LVGL 9.5 + VG-Lite + touch (`display-dsi`,
+  `touch-ft5406`, `lvgl-ui`) - verified 2026-10-11
+- `pin-watch` (diagnostic, any board): button-led + `PINCHG` for any GPIO input change - finds
+  the pin of a button that is not in the board sheet (hw-troubleshooting)
 - `dual-core-ipc` (scope dual, bare metal on both; CM33 console + CM55 worker over a shared-memory
   mailbox: `ipc?`, `ping <n>`, `led55 <1|2> on|off`; component `ipc-mailbox` adds `<app>/shared`
   and `INCLUDES+=../shared` to both cores). `help.sh` lists templates from `description.txt`.
@@ -348,7 +358,9 @@ COM ports; tools are located at run time (`env.sh`), and the receiver runs Stage
   `built` (0-warning build), then `verified` (tested on hardware) - record where in `verified`.
 - **New app template:** `templates/<name>/proj_cm33_ns/main.c` (+ `proj_cm55/main.c` if needed),
   `templates/<name>/tests/<name>.json`, `components.txt` (component ids) and `requires.txt`
-  (base-board parts, optional). A template contains only the application layer. Names starting
+  (base-board parts, optional). A template contains only the application layer; `shared/` and
+  `ui/` are copied too, and an optional `post_create.sh <appdir>` runs last (env `PYTHON`,
+  `SKILLS_DIR`) - e.g. `lvgl-ui-app` generates its UI code there. Names starting
   with `_` are not templates.
 - Keep scripts and `.env` files LF; keep everything PC-specific out of the skill (bench files,
   COM ports, serials, user paths) - it must stay copyable.

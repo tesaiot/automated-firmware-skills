@@ -5,7 +5,7 @@
   "cores": [
     "cm55"
   ],
-  "summary": "board55.h on CM55: init, LED1/LED2 write/read, busy-wait delay (PDL only)",
+  "summary": "board55.h on CM55: init, LED1/LED2 write/read, busy-wait delays, millisecond tick (SysTick 1 kHz bare metal / kernel tick FreeRTOS) (PDL only)",
   "api": "board/board55.h, board/bsp_status.h",
   "provides": [
     "board55-api"
@@ -15,5 +15,5 @@
     "parts": []
   },
   "claims": [],
-  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms) (board55 LED write/read)"
+  "verified": "2026-10-10 tesaiot: rtos-dual 11/11 PASS (CM33 6 tasks, CM55 ping/uptime/LED via mailbox, uptimes 1892/1891 ms) (board55 LED write/read); 2026-10-11 lvgl-demo: board55_millis 9841 ms vs CM33 9842 ms (uptime55)"
 }

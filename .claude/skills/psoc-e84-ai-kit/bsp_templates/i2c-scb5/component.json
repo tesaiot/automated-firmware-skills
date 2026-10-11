@@ -1,7 +1,7 @@
 {
   "id": "i2c-scb5",
   "layer": "bsp",
-  "status": "planned",
+  "status": "built",
   "cores": [
     "cm33_ns"
   ],
@@ -25,6 +25,7 @@
     "P17.0",
     "P17.1"
   ],
-  "source": "BSP CYBSP_I2C_CAM_CONTROLLER = CYBSP_I2C_DISPLAY_CONTROLLER (SCB5)",
-  "notes": "display-dsi (CM55) also claims SCB5; on tesaiot the QWA309 CS select switch must be on for base-board parts"
+  "source": "BSP CYBSP_I2C_CAM_CONTROLLER (SCB5); code derived from i2c-scb0 (verified)",
+  "notes": "inits SCB5 MASTER ONLY: the vendor BSP 1.4.0 config is master+slave with own address 0x08 (= QWA309 CapSense) - same change as the TESAIoT SDK BSP delta; diagnostics i2c5_lines() / i2c5_pullup_probe(); display touch, QWIIC, mikroBUS, OPTIGA, CapSense, LED matrix and the DVP camera SCCB share this bus",
+  "verified": "built 0-warning 2026-10-10 (qwa309-io); init OK on tesaiot but the bus is held low on our bench (see qwa309 board log) - transfers not yet verified"
 }

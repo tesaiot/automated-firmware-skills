@@ -1,50 +1,59 @@
 {
   "id": "display-dsi",
   "layer": "bsp",
-  "status": "planned",
+  "status": "verified",
   "cores": [
+    "cm33_ns",
     "cm55"
   ],
-  "summary": "GFXSS MIPI-DSI on J10: Waveshare 4.3\" 800x480 (@0x45) + FT5406 touch (@0x38, J16) via SCB5, on CM55",
-  "api": "board/display.h",
+  "summary": "GFXSS MIPI-DSI Waveshare 4.3\" (800x480 shown, 832x480 RGB565 buffers x2 in gfx_mem) + VG-Lite GPU init, bare-metal vsync flag; panel MCU @0x45 via SCB5 (i2c-scb5-cm55); CM33_NS part enables the GFXSS clocks",
+  "api": "proj_cm55: board/display.h; proj_cm33_ns: board/display_clocks.h (call display_clocks_enable() before board_start_cm55())",
   "provides": [
     "display-dsi"
   ],
   "requires": {
     "components": [
-      "cm55-board"
+      "cm55-board",
+      "i2c-scb5-cm55"
     ],
     "parts": [
       "display"
     ]
   },
   "exec_models": [
-    "baremetal",
-    "freertos"
+    "baremetal"
   ],
   "mtb_deps": {
     "proj_cm55": {
-      "display-dsi-waveshare-4-3-lcd": "mtb://display-dsi-waveshare-4-3-lcd#latest-v1.X#$$ASSET_REPO$$/display-dsi-waveshare-4-3-lcd/latest-v1.X",
-      "touch-ctp-ft5406": "mtb://touch-ctp-ft5406#latest-v1.X#$$ASSET_REPO$$/touch-ctp-ft5406/latest-v1.X"
+      "display-dsi-waveshare-4-3-lcd": "mtb://display-dsi-waveshare-4-3-lcd#latest-v1.X#$$ASSET_REPO$$/display-dsi-waveshare-4-3-lcd/latest-v1.X"
     }
   },
   "makefile": {
     "proj_cm55": {
-      "DEFINES": [
-        "MTB_DISPLAY_W4P3INCH_RPI",
-        "MTB_CTP_FT5406"
+      "COMPONENTS": [
+        "GFXSS"
       ]
     }
   },
+  "patches": [
+    {
+      "lib": "mtb-dsl-pse8xxgp",
+      "file": "pdl/drivers/third_party/COMPONENT_GFXSS/vsi/gcnano/VGLiteKernel/rtos/vg_lite_hal.c",
+      "find_re": "(int32_t vg_lite_hal_wait_interrupt\\(uint32_t timeout, uint32_t mask, uint32_t \\*value\\)\\r?\\n\\{\\r?\\n#if _BAREMETAL\\r?\\n)[\\s\\S]*?(\\r?\\n#else /\\*for rt500\\*/)",
+      "replace": "\\1    /* PSE84_SKILL_PATCH vg_lite_wait: bounded wait (timeout in ms), report the status\n     * bits in *value; the original looped forever and read *value unset. */\n    uint32_t int_status = vg_lite_hal_peek(VG_LITE_INTR_STATUS);\n    uint32_t waited_us = 0;\n    uint32_t limit_us = ((timeout == 0U) || (timeout > 5000U)) ? 5000000U : (timeout * 1000U);\n    while ((int_status == 0U) && (waited_us < limit_us)) {\n        Cy_SysLib_DelayUs(1);\n        waited_us++;\n        int_status = vg_lite_hal_peek(VG_LITE_INTR_STATUS);\n    }\n    if (value != NULL) {\n        *value = int_status & mask;\n    }\n    if (int_status == 0U) {\n        return 0;\n    }\n    if (IS_AXI_BUS_ERR(int_status)) {\n        vg_lite_bus_error_handler();\n    }\n    return 1;\\2",
+      "applied_re": "PSE84_SKILL_PATCH vg_lite_wait",
+      "why": "bare-metal VG-Lite GPU wait: no timeout + reads *value unset (TESAIoT SDK finding)",
+      "source": "own fix; problem noted in the TESAIoT SDK third_party_patches/mtb-dsl-pse8xxgp"
+    }
+  ],
   "claims": [
-    "GFXSS",
-    "SCB5"
+    "GFXSS"
   ],
   "hw_settings": [
-    "AI Kit J16 fitted (TSM-102-01-L-DH-A-P-TR) and wired to the panel: 5V J16.1, SCL J16.2, GND J16.3, SDA J16.4",
-    "power-cycle USB after flashing (debugger reset leaves the display dark)"
+    "Waveshare 4.3\" DSI panel on J10 (FPC); on the bare AI Kit also J16 (5 V + touch I2C, not fitted by default)",
+    "tesaiot: the panel MCU 0x45 and touch 0x38 share SCB5 with the QWA309 parts - if SCB5 is held low, set CS select OFF (hw-troubleshooting)"
   ],
-  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo (display_i2c_config.h: USE_KIT_PSE84_AI -> CYBSP_I2C_DISPLAY_CONTROLLER)",
-  "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/gfxss_config.c + lv_port_indev.c (enable GFXSS clocks on CM33 before CM55 boots)",
-  "notes": "COMPONENTS+=GFXSS goes in the app's common.mk; frame buffers in the BSP gfx_mem region"
+  "source": "own code; guidelines (read, never copied - Infineon EULA: binary redistribution only): Infineon mtb-example-psoc-edge-gfx-lvgl-demo v2.6.1, E84_TouchUI (github.com/NnopponS/WheelSense_Project firmware/E84_TouchUI), TESAIoT SDK proj_cm55/gfxss_config.c + proj_cm33_ns/main.c",
+  "notes": "BSP 1.4.0 has no gfxss block: config structs written in display.c, mipi_dsi_cfg from the Waveshare library; gfx_mem 0x1C4000 = 2 x 798720 B buffers + 253952 B VG-Lite heap (non-cacheable on CM55 via BSP MPU region); _BAREMETAL left at its default 1 (VG-Lite polls, no GPU NVIC handler); DC interrupt -> flag + 500 ms wait timeout; SCB5 bus clear + panel init retries (SDK warm/cold-boot findings)",
+  "verified": "2026-10-11 tesaiot (second board, Waveshare 4.3\" DSI), app lvgl-demo (dual, bare metal both cores): serial_test 9/9 PASS (display/GPU/touch OK, display IRQs ~110/s, frames flushed, 0 timeouts); full 800x480 frame rendered in 6-7 ms with VG-Lite; user saw the UI correct; 3 taps -> 3 button clicks at (174,210); slider drag -> 100 at x=791 (mirroring correct)"
 }

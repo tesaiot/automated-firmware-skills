@@ -233,11 +233,16 @@ if [ "$TPL" != none ]; then
   APP_OPTIONS="$(printf '%s\n' "$out" | sed -n 's/^APP_OPTIONS=//p')"
   APP_MODELS="$(printf '%s\n' "$out" | sed -n 's/^APP_MODELS=//p')"
   info "Applying template $TPL (application layer)"
-  for proj in proj_cm33_s proj_cm33_ns proj_cm55; do
-    [ -d "$T/$proj" ] && cp -r "$T/$proj/." "$APPDIR/$proj/"
+  for proj in proj_cm33_s proj_cm33_ns proj_cm55 shared ui; do
+    [ -d "$T/$proj" ] && mkdir -p "$APPDIR/$proj" && cp -r "$T/$proj/." "$APPDIR/$proj/"
   done
   [ -d "$T/tests" ] && cp -r "$T/tests" "$APPDIR/"
   [ -f "$T/README.md" ] && cp "$T/README.md" "$APPDIR/README-app.md"
+  # optional template hook, e.g. generate code from a spec (lvgl-ui-app: ui_gen.py)
+  if [ -f "$T/post_create.sh" ]; then
+    info "Template hook post_create.sh"
+    PYTHON="$PYTHON" SKILLS_DIR="$(dirname "$SKILL_DIR")" bash "$T/post_create.sh" "$APPDIR"       || die "template hook post_create.sh failed"
+  fi
 fi
 for proj in proj_cm33_ns proj_cm55; do
   mk="$APPDIR/$proj/Makefile"; [ -f "$mk" ] || continue   # examples may have other projects

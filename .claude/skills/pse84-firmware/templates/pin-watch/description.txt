@@ -1,0 +1,1 @@
+Pin watch (diagnostic): button-led + periodic BTN line + PINCHG for any GPIO input change on any port - finds the pin of a button/switch that is not in the board sheet (read-only except 'watch arm' on reset-default pins)

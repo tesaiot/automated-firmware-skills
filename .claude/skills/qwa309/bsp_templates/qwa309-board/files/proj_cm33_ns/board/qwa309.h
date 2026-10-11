@@ -38,6 +38,24 @@
 #define QWA309_UART_RX_PIN      (0U)
 #define QWA309_UART_TX_PIN      (1U)
 
+/* Header digital pins Arduino D2..D9 (schematic V3_P1 via the SDK Arduino map).
+ * All pass a TXB0106 level shifter (MCU 1.8 V / header 3.3 V): no pull stiffer
+ * than ~50 kOhm, never 5 V. D2 (P13.0) / D3 (P13.5) outputs do not latch
+ * (erratum, proven on HW by the SDK team) - inputs only. */
+#define QWA309_HDR_FIRST_D      (2U)
+#define QWA309_HDR_PORTS        { 13U, 13U, 13U, 13U, 13U, 13U, 15U, 15U }  /* D2..D9 */
+#define QWA309_HDR_PINS         {  0U,  5U,  6U,  4U,  3U,  7U,  3U,  2U }  /* D2..D9 */
+#define QWA309_HDR_OUT_ERRATUM  { true, true, false, false, false, false, false, false }
+
+/* Header PWM: TCPWM0 counter 5 -> line P13.3 (D6), complement P13.4 (D5) */
+#define QWA309_PWM_TCPWM_CNT    (5U)
+
+/* CAN (SN65HVD230): CANFD0 channel 1, P16.2 RX / P16.3 TX = DVP camera D2/D3 */
+#define QWA309_CAN_CHANNEL      (1U)
+#define QWA309_CAN_PORT_NUM     (16U)
+#define QWA309_CAN_RX_PIN       (2U)
+#define QWA309_CAN_TX_PIN       (3U)
+
 /* Header I2C (Arduino A4/A5) = SCB5 P17.1 SDA / P17.0 SCL, 3.3 V, shared with
  * display touch; 7-bit addresses of the base-board parts on it */
 #define QWA309_I2C_ADDR_CAPSENSE    (0x08U)

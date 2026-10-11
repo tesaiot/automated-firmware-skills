@@ -1,7 +1,7 @@
 # TESAIoT Dev Kit rev1 pinout image - cross-check
 
 Image: [images/TESAIoT Dev Kit rev1 pinout.jpg](../../images/TESAIoT%20Dev%20Kit%20rev1%20pinout.jpg)
-("TESA AIoT E84 Embedded AI Board", Model 1, Version 3.1). Checked 2026-10-10 against:
+("TESA AIoT E84 Embedded AI Board", Model 1, Version 3.1). Checked 2026-10-10 against (re-checked the same image the same day after the `qwa309-io` knob test):
 
 - **BSP**: vendor `KIT_PSE84_AI` 1.4.0 `design.modus` (SoM pins; generated `cycfg_pins.h`)
 - **SDK**: TESAIoT SDK commit d2ebc5c (2026-10-07), `kit-tesaiot-pse84-ai/` README +
@@ -27,7 +27,7 @@ and OPTIGA parts.
 | D8 / D9 | "P8.x (SW5/SW6)" | P15.3 / P15.2 | BSP: P8.x = sensor I2C, PDM mic, USB | **wrong** |
 | SW5 / SW6 buttons | P8.x | SW4/SW5 on **P17.5 / P17.7** (older names SW5/SW6) | HW: P17.5/P17.7 configured, read 0 with camera | **wrong pin**; name matches the photo |
 | A0..A3 | P15.2..P15.5 = VR1..VR4 | A0-A3 **not connected**; P15.2/P15.3 = D9/D8 | - | **wrong** |
-| VR1..VR4 | P15.2..P15.5 | P15.4..P15.7 (ch4..7); physical VR1 = P15.5, VR2 = P15.4 | SDK BSP `CYBSP_POT_VR1..4` | **wrong** |
+| VR1..VR4 | P15.2..P15.5 | P15.4..P15.7 (ch4..7); physical VR1 = P15.5, VR2 = P15.4 | SDK BSP `CYBSP_POT_VR1..4`; **HW 2026-10-10: VR1..VR4 = P15.5, P15.4, P15.6, P15.7** | **wrong** (confirmed on HW) |
 | A4 / A5 (header 1 table) | P15.6 / P15.7 ADC | A4/A5 = SDA/SCL (P17.1/P17.0); P15.6/P15.7 = VR3/VR4 | - | **wrong** |
 | D14 / D15 (header 1) | P15.0 / P15.1 UART | these are D0/D1 | - | naming only |
 | D16..D19 (header 2) | P13.0..P13.3 GPIO/PWM | P13.0 = D2, P13.3 = D6; P13.1/P13.2 not on the Arduino map (only on the J17 mezzanine) | - | **unverified** |
@@ -39,11 +39,21 @@ and OPTIGA parts.
 
 ## Open questions (resolve on the board or the schematic, then move the answer into the skill)
 
-1. Button silkscreen on QWA309 rev1: SW5/SW6 (photo) or SW4/SW5 (SDK)? Update `BTN_LABELS`.
-2. Does **CAM OFF** release P17.5/P17.7 so the buttons work with the camera fitted?
+1. Button silkscreen on QWA309 rev1: P17.5 = **SW5** verified 2026-10-10 (BOARD_BTN_NAMES updated); is
+   P17.7 = SW6 (unplug the camera to test)? Where are push buttons SW1/SW2 wired - no MCU GPIO changes?
+2. Does **CAM OFF** release P17.5/P17.7 so the buttons work with the camera fitted? (2026-10-10:
+   CAM OFF does **not** free the SCB5 bus - SCL/SDA stay low; buttons not re-tested.)
 3. Is VIN connected on rev1 (image) or not (SDK schematic V3_P1)? Which revision is our board?
 4. Which SCB drives the header SPI on P9.0-P9.3?
 5. Header 2 pins labelled D16-D19 - what is really there on rev1?
+6. What holds SCB5 (P17.0/P17.1) low on our board - the fitted DVP camera or the QWA309 I2C path
+   behind the CS select switch? (2026-10-10: CS select OFF -> still low, so not the base-board
+   path behind that switch; camera most likely.) Later 2026-10-10 on a second board: CS select ON
+   clamps SCB5 low at once, OFF releases it after ~2.5 min -> the clamp is on the CS-select side
+   (CapSense PSoC 4000T / its supply), not the camera. What does CS select switch (power, bus or
+   both)? Measure the 4000T supply with CS ON/OFF.
+7. Pots reach only ~1400-1800 of 4095 counts at full turn: a divider on QWA309, or too short a
+   SAR sample time? (schematic, or raise `hsSampleTime` and compare)
 
 The AI Kit's own user button: the Infineon UG Rev *B and our board both say **SW1** (P7.0), with SW2
 as reset. The TESAIoT docs say "SW2", which is wrong.

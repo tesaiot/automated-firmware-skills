@@ -1,7 +1,7 @@
 {
   "id": "qwa309-pots",
   "layer": "bsp",
-  "status": "planned",
+  "status": "verified",
   "cores": [
     "cm33_ns"
   ],
@@ -11,19 +11,27 @@
   ],
   "requires": {
     "components": [
-      "ai-kit-board"
+      "ai-kit-board",
+      "qwa309-board"
     ],
     "parts": [
       "pots"
     ]
   },
   "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/modules/cm55_sensor_poll/cm55_sensor_poll.c + bento-firmware-template-mtb-mpy/bento_libs/claw/kit-tesaiot-pse84-ai/mpy/mod_qwa309_pots.c (SAR started before CM55 boots; readiness via result-status bits, not value 0)",
-  "notes": "needs a hash-checked design.modus overlay (SAR + pins); include board/qwa309.h; VR1/VR2 map: measure",
+  "notes": "no design.modus overlay: pots_init() points the BSP's (non-const) SAR config at P15.4..P15.7 before Cy_AutAnalog_Init; knob numbering = silkscreen (VR1 = P15.5, VR2 = P15.4); never apply 3.3 V to P15.x",
   "claims": [
     "SAR",
     "P15.4",
     "P15.5",
     "P15.6",
     "P15.7"
-  ]
+  ],
+  "api": "board/qwa309_pots.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "source": "KIT_PSE84_AI BSP 1.4.0 Autonomous Analog config (autonomous_analog_init, CYBSP_SAR_ADC_*), re-targeted at run time to SAR GPIO ch 4..7",
+  "verified": "2026-10-10 tesaiot, app qwa309-io: SAR ch 4..7 live (ready=1); knobs turned VR1..VR4 in order -> events from P15.5, P15.4, P15.6, P15.7 (label map confirmed); full-turn range only 0..~1400-1800 of 4095 counts - open: board divider or too short SAR sample time (31 cycles)"
 }

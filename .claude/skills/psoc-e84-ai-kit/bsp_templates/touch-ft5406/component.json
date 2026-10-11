@@ -1,0 +1,34 @@
+{
+  "id": "touch-ft5406",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "FT5406 capacitive touch @0x38 on SCB5 (Waveshare DSI panels), single touch, x/y mirrored to display pixels",
+  "api": "board/touch.h",
+  "provides": [
+    "touch-ft5406"
+  ],
+  "requires": {
+    "components": [
+      "display-dsi",
+      "i2c-scb5-cm55"
+    ],
+    "parts": [
+      "display"
+    ]
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "mtb_deps": {
+    "proj_cm55": {
+      "touch-ctp-ft5406": "mtb://touch-ctp-ft5406#latest-v1.X#$$ASSET_REPO$$/touch-ctp-ft5406/latest-v1.X"
+    }
+  },
+  "source": "own code over Infineon touch-ctp-ft5406; guideline: Infineon lvgl-demo + E84_TouchUI lv_port_indev.c (read, rewritten)",
+  "notes": "needs the SCB5 IRQ (display_init enables it); do not use mtb_ctp_ft5406_get_multi_touch (clears its result array)",
+  "verified": "2026-10-11 tesaiot (second board, Waveshare 4.3\" DSI), app lvgl-demo (dual, bare metal both cores): serial_test 9/9 PASS (display/GPU/touch OK, display IRQs ~110/s, frames flushed, 0 timeouts); full 800x480 frame rendered in 6-7 ms with VG-Lite; user saw the UI correct; 3 taps -> 3 button clicks at (174,210); slider drag -> 100 at x=791 (mirroring correct)"
+}

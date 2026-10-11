@@ -1,0 +1,31 @@
+{
+  "id": "i2c-scb5-cm55",
+  "layer": "bsp",
+  "status": "verified",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "3.3 V I2C SCB5 P17.0/P17.1 owned by CM55 (display panel MCU 0x45, FT5406 touch 0x38; QWA309 parts on tesaiot) - same API and file as i2c-scb5, plus the SCB5 IRQ for Infineon PDL device libraries",
+  "api": "board/i2c_scb5.h",
+  "provides": [
+    "i2c-scb5"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [
+    "SCB5",
+    "P17.0",
+    "P17.1"
+  ],
+  "source": "copy of psoc-e84-ai-kit/bsp_templates/i2c-scb5 (keep both files identical); i2c5_irq_enable() for Cy_SCB_I2C_MasterWrite/Read users (Infineon display/touch libraries)",
+  "notes": "one owner core per app: claims SCB5 like i2c-scb5 (CM33_NS), so the two cannot be combined; master-only init (BSP 1.4.0 config is master+slave own address 0x08 = QWA309 CapSense)",
+  "verified": "2026-10-11 lvgl-demo: panel MCU 0x45 init + FT5406 0x38 reads via the SCB5 IRQ on CM55 (see display-dsi)"
+}

@@ -1,0 +1,14 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info",           "send": "info", "expect_re": ["^INFO app=pin-watch "]},
+    {"name": "report off",     "send": "report off", "expect": ["OK report=off"]},
+    {"name": "buttons table",  "send": "buttons", "expect_re": ["^BUTTON btn1 name=\\S+ pin=P\\d+\\.\\d+"]},
+    {"name": "arm watch",      "send": "watch arm", "expect_re": ["^OK watch=on armed=\\d+ muted=\\d+"]},
+    {"name": "press a button", "interactive": true, "prompt": "Press and release the button you want to locate", "expect_re": ["^PINCHG P\\d+\\.\\d+=[01]"], "timeout": 20},
+    {"name": "disarm watch",   "send": "watch disarm", "expect_re": ["^OK watch=on armed=0 "]},
+    {"name": "console alive",  "send": "foo", "expect": ["ERR unknown command"]}
+  ]
+}

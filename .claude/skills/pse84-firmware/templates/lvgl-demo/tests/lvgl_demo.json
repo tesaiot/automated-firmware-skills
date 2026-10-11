@@ -1,0 +1,19 @@
+{
+  "baud": 115200,
+  "boot": {"expect": "READY", "timeout": 120},
+  "sync": {"send": "info", "expect": "READY"},
+  "steps": [
+    {"name": "info, cm55 ready",   "send": "info",     "expect_re": ["^INFO app=lvgl-demo .*cm55=1"]},
+    {"name": "cm55 alive",         "send": "ipc?",     "expect_re": ["^IPC ready=1 alive=1 hb_per_s=[1-9]\\d*"], "pause": 2.0},
+    {"name": "cm55 tick",          "send": "uptime55", "expect_re": ["^OK uptime55_ms=[1-9]\\d* "]},
+    {"name": "display running",    "send": "gfx",      "expect_re": ["^GFX state=run display=OK "]},
+    {"name": "GPU up",             "send": "gfx",      "expect_re": ["^GFX .* gpu=OK "]},
+    {"name": "touch up",           "send": "gfx",      "expect_re": ["^GFX .* touch=OK "]},
+    {"name": "frames + vsync IRQs","send": "gfx",      "expect_re": ["^GFX .* irqs=[1-9]\\d* flushes=[1-9]\\d* .*timeouts=0 "], "pause": 1.0},
+    {"name": "unknown cmd",        "send": "foo",      "expect": ["ERR unknown command"]},
+    {"name": "screen visible",     "interactive": true, "send": "gfx",
+     "prompt": "Look at the display: dark screen with title 'TESAIoT LVGL 9.5 bare metal CM55', a 'Press me' button and a slider?", "expect_re": ["^GFX state=run"], "timeout": 10},
+    {"name": "touch the button",   "interactive": true, "send": "gfx",
+     "prompt": "Tap the 'Press me' button 3 times, then press Enter", "expect_re": ["^TOUCH presses=[1-9]\\d* .*clicks=[1-9]\\d*"], "timeout": 30}
+  ]
+}

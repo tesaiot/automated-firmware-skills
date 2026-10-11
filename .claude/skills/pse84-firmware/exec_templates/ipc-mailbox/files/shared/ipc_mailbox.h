@@ -31,6 +31,7 @@
 #define IPC_CMD_PING        (1UL)    /* result = arg + 1                    */
 #define IPC_CMD_LED         (2UL)    /* arg = (led << 8) | on; result = readback */
 #define IPC_CMD_UPTIME      (3UL)    /* result = CM55 uptime in ms (its own tick; bare metal: IPC_ERR_CMD) */
+#define IPC_CMD_APP_BASE    (16UL)   /* 16.. : commands defined by the app (template main.c) */
 
 /* Replies (status) */
 #define IPC_OK              (0UL)

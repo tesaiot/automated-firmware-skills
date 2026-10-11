@@ -17,6 +17,12 @@ void     board55_init(void);                     /* cybsp_init + IRQs        */
 bool     board55_led_write(uint32_t led, bool on); /* led 1..BOARD55_LEDS    */
 bool     board55_led_read(uint32_t led);         /* output register readback */
 void     board55_delay_us(uint32_t us);
+void     board55_delay_ms(uint32_t ms);
 void     board55_fatal(void);
+
+/* Millisecond tick. Bare metal: SysTick 1 kHz started by board55_init() (it stops
+ * in Deep Sleep - the CM55 loops here never deep-sleep). FreeRTOS (freertos-cm55):
+ * the kernel tick, 0 until the scheduler runs. */
+uint32_t board55_millis(void);
 
 #endif /* BOARD55_H */

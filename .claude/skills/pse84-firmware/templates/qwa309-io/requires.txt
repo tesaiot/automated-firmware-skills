@@ -1,0 +1,3 @@
+# board parts needed (packs parts.json)
+pots
+capsense

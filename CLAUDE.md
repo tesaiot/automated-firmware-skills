@@ -22,4 +22,14 @@
 - Sensor problems on hardware: use the `sensor-debug` skill (PC drives the console; no flashing);
   physical stimulus tests need the user - ask for one action at a time. Open the browser live
   view (`sensor_dash.py`) only when the user asks; stop it afterwards (it holds the COM port).
+- Live view = raw data first: its bridge writes every board line to `<app>/logs/liveview-*.log`;
+  read that (`sensor-debug/scripts/dash_ctl.py log|cmd|mark`) instead of stopping the view or asking
+  what the page shows. Mark each user action before asking for it.
+- Board faults (dead device, clamped bus, unknown button pin, "is it firmware or hardware"): use the
+  `hw-troubleshooting` skill; known TESAIoT findings are in its `reference/tesaiot-known-issues.md`.
+- Touch UI on the DSI display: `ui-designer` skill (browser editor; this session answers its
+  requests via `ui_ctl.py wait` -> patch; Submit = ui_gen.py -> build -> flash -> tests/ui_app.json).
+  Generated `ui_gen.*` are never hand-edited; developer code goes in `ui_actions.c`.
+- Before committing a new/changed skill or workflow: `cleanroom-test` skill (fresh subagent follows
+  only the docs; triage its report into doc/script fixes; record in `cleanroom-test/reports/`).
 - Backlog: `docs/jobs-to-be-done.md`.

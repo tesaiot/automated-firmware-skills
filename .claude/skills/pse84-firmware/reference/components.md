@@ -9,6 +9,7 @@ The agent composes; `scripts/components.py` resolves and gates; `new_app.sh` app
 func_templates/<id>/         services + middleware + custom logic (LVGL, sensors, protocols...)
 exec_templates/<id>/         execution model (baremetal, FreeRTOS...) and inter-core IPC
 templates/<app>/             main.c (+ proj_cm55/main.c), tests/*.json, components.txt, requires.txt
+                             (+ optional shared/, ui/, post_create.sh hook run by new_app.sh)
 ```
 func/exec live in this engine skill (MCU-generic); packs may also carry their own func/exec
 components. Component ids are unique across the engine and all packs.

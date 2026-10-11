@@ -1,0 +1,1 @@
+LVGL 9.5 UI designed in the browser (ui-designer skill: canvas editor + Claude Code session) and generated as static C by ui_gen.py: ui/ui.json -> proj_cm55/ui/ui_gen.c (+ ui_actions.c for your event code); CM33 console ui/uitree/uiset/uiclick drive and check the UI over the IPC mailbox

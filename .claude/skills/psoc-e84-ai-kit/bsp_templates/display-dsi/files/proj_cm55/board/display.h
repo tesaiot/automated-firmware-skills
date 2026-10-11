@@ -1,18 +1,24 @@
 /*******************************************************************************
-* File Name : display.h                       component: display-dsi (planned)
+* File Name : display.h                       component: display-dsi
 *
-* Layer 1 - BSP, CM55. MIPI-DSI display of the PSOC Edge E84 AI Kit:
-*   GFXSS (DC + GPU + MIPI-DSI host, 2 lanes, up to 1.5 Gbps/lane) on the
-*   Raspberry-Pi compatible 15-pin connector J10 (3.3 V, SCL/SDA = SCB5 P17.0/
-*   P17.1). Default panel: Waveshare 4.3" 800x480 DSI (panel MCU @0x45 for
-*   power/backlight) + FT5406 capacitive touch @0x38 on J16 (5 V + I2C,
-*   4-pin header NOT fitted by default; UG table 11 also lists 2.8/4/5/7").
-* Backend: display-dsi-waveshare-4-3-lcd (mtb_disp_waveshare_4p3_init /
-*   _set_brightness, PDL SCB5) + touch-ctp-ft5406 (mtb_ctp_ft5406_init /
-*   _get_single_touch / _get_multi_touch) + PDL Cy_GFXSS_*, as in
-*   mtb-example-psoc-edge-gfx-lvgl-demo (USE_KIT_PSE84_AI -> CYBSP_I2C_DISPLAY_*).
-*   COMPONENTS+=GFXSS in common.mk; GFXSS clock on CM33 before CM55 boots.
-*   Frame buffers in the BSP "gfx_mem" SoCMEM region.
+* Layer 1 - BSP (CM55). MIPI-DSI display through the PSOC Edge graphics
+* subsystem (GFXSS: display controller + VG-Lite GPU + MIPI-DSI host):
+* Waveshare 4.3" DSI panel, 800x480 visible, driven as 832x480 RGB565 (the
+* display controller needs a 128-byte aligned stride: 832 px * 2 B = 1664).
+* Panel power/backlight: its MCU at I2C 0x45 on SCB5 (i2c-scb5-cm55), through
+* Infineon's display-dsi-waveshare-4-3-lcd library.
+*
+* Two full frame buffers live in the BSP region gfx_mem (section .cy_gpu_buf,
+* SOCMEM, mapped non-cacheable on CM55 by the BSP MPU setup -> no cache
+* maintenance), together with the VG-Lite command heap (display_gpu_init()).
+*
+* Bare metal: display_show() hands a buffer to the display controller, which
+* takes it at the next frame end and raises its interrupt; the ISR sets a flag
+* (no RTOS notify). display_wait_shown() waits for it (WFI) with a timeout - a
+* missed interrupt cannot freeze the caller (TESAIoT SDK guideline: 500 ms).
+*
+* Before CM55 starts, CM33_NS must enable the GFXSS clocks:
+* display_clocks_enable() (proj_cm33_ns/board/display_clocks.h, same component).
 *******************************************************************************/
 #ifndef DISPLAY_H
 #define DISPLAY_H
@@ -21,38 +27,34 @@
 #include <stdint.h>
 #include "bsp_status.h"
 
-typedef enum
-{
-    DISP_FMT_RGB565 = 0,
-    DISP_FMT_RGB888
-} disp_format_t;
+#define DISPLAY_WIDTH           (800U)      /* visible pixels */
+#define DISPLAY_HEIGHT          (480U)
+#define DISPLAY_STRIDE_PX       (832U)      /* frame buffer line, pixels */
+#define DISPLAY_BYTES_PP        (2U)        /* RGB565 */
+#define DISPLAY_STRIDE_BYTES    (DISPLAY_STRIDE_PX * DISPLAY_BYTES_PP)
+#define DISPLAY_FB_BYTES        (DISPLAY_STRIDE_BYTES * DISPLAY_HEIGHT)
+#define DISPLAY_FB_COUNT        (2U)
+#define DISPLAY_SHOW_TIMEOUT_MS (500U)
 
-typedef struct
-{
-    uint16_t      width;          /* 800 */
-    uint16_t      height;         /* 480 */
-    disp_format_t format;         /* RGB565 default */
-    bool          double_buffer;
-} disp_config_t;
+/* Starts SCB5 if needed (i2c5_init, 100 kHz), clears the I2C bus, starts GFXSS with
+ * frame buffer 0 (filled black), enables the display-controller and SCB5
+ * interrupts, then powers the panel and its backlight. */
+bsp_status_t display_init(void);
 
-#define DISP_CONFIG_DEFAULT  { 800U, 480U, DISP_FMT_RGB565, true }
+/* VG-Lite GPU: hands it its command heap (in gfx_mem) and initialises it for
+ * the full 832x480 target. Call after display_init(). */
+bsp_status_t display_gpu_init(void);
 
-/* Panel power-up over I2C, GFXSS + DSI init, backlight on. */
-bsp_status_t disp_init(const disp_config_t *cfg);
-void         disp_deinit(void);
-uint16_t     disp_width(void);
-uint16_t     disp_height(void);
+void        *display_framebuffer(uint32_t index);       /* 0 or 1, 64-byte aligned */
+void         display_show(const void *fb);              /* takes effect at frame end */
+bool         display_shown(void);                       /* the last show took effect */
+bool         display_wait_shown(uint32_t timeout_ms);   /* false = timed out (counted) */
 
-void        *disp_draw_buffer(void);           /* back buffer to render into */
-bsp_status_t disp_flip(void);                  /* present at next vsync      */
-bsp_status_t disp_wait_vsync(uint32_t timeout_ms);
-bsp_status_t disp_set_brightness(uint8_t pct); /* 0..100                     */
-bsp_status_t disp_fill(uint32_t rgb888);       /* test pattern helper        */
+bsp_status_t display_set_brightness(uint8_t percent);   /* 0..100 */
 
-/* Touch (FT5406). pressed=false when no finger; x/y in panel pixels. */
-bsp_status_t touch_init(void);
-bsp_status_t touch_read(bool *pressed, uint16_t *x, uint16_t *y);
-
-uint32_t     disp_last_rslt(void);
+uint32_t     display_irq_count(void);       /* display-controller interrupts */
+uint32_t     display_show_count(void);
+uint32_t     display_timeout_count(void);   /* display_wait_shown timeouts */
+uint32_t     display_last_rslt(void);       /* last GFXSS / I2C / VG-Lite result */
 
 #endif /* DISPLAY_H */

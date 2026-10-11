@@ -75,13 +75,15 @@ exec-agnostic (an RTOS registers locks via `i2c0_set_lock()`; IRQ callbacks only
 | `qspi-flash` | planned | CM33_NS | `extflash.h` | `extflash_init`, `extflash_read/erase/write` (window-relative), `extflash_xip_ptr`, `extflash_info` |
 | `psram` | planned | CM33_NS | `psram.h` | `psram_init`, `psram_base/size`, `psram_test` |
 | `radio-cyw55513` | planned | CM33_NS, FreeRTOS | `radio.h` | `radio_wifi_init/connect/scan/ip/rssi`, `radio_bt_init`, `radio_power` |
-| `i2c-scb5` | planned | CM33_NS | `i2c_scb5.h` | as `i2c-scb0` with prefix `i2c5_`, plus `i2c5_scb_base/context` |
-| `display-dsi` | planned | CM55 | `display.h` | `disp_init(cfg)`, `disp_draw_buffer`, `disp_flip`, `disp_set_brightness`, `touch_init/read` |
+| `i2c-scb5` | built | CM33_NS | `i2c_scb5.h` | as `i2c-scb0` with prefix `i2c5_`, plus `i2c5_scb_base/context`, `i2c5_irq_enable` |
+| `i2c-scb5-cm55` | verified | CM55 | `i2c_scb5.h` | same file as `i2c-scb5`, owned by CM55 (display/touch) |
+| `display-dsi` | verified | CM55 (+ CM33_NS clocks) | `display.h`, `display_clocks.h` | `display_init`, `display_gpu_init`, `display_framebuffer(i)`, `display_show`, `display_wait_shown`, `display_set_brightness`, counters; CM33: `display_clocks_enable` before `board_start_cm55` |
+| `touch-ft5406` | verified | CM55 | `touch.h` | `touch_init`, `touch_read(&pressed,&x,&y)` (mirrored to display pixels), counters |
 | `camera-usb-uvc` | planned (emUSB-Host licence pending) | CM55, FreeRTOS | `camera_uvc.h` | `cam_init(cfg)`, `cam_is_connected`, `cam_start/stop`, `cam_get_frame` |
 | `led-rgb-pwm` | planned (blocked by pin claims) | CM33_NS | `rgb_pwm.h` | `rgb_init`, `rgb_set(r,g,b)`, `rgb_set_hex` |
 
 Gate interactions already encoded in the manifests (`components.py check` blocks them):
-`display-dsi` + `i2c-scb5` (SCB5, needs `scb5-lock`), `led-rgb-pwm` + `ai-kit-board` (P20.4-6),
+`i2c-scb5` + `i2c-scb5-cm55` (both claim SCB5: one owner core), `led-rgb-pwm` + `ai-kit-board` (P20.4-6),
 `mic-analog` + `qwa309-pots` (SAR), `camera-usb-uvc` + `usb-cdc` (USBHS), `radio-cyw55513` /
 `camera-usb-uvc` under baremetal (FreeRTOS only). `hw_settings`: J8 speaker (`audio-tlv320dac3100`),
 J16 + power-cycle (`display-dsi`), camera on J2 (`camera-usb-uvc`).

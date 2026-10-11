@@ -9,9 +9,12 @@ frees the COM port for sensor_debug.py / serial_test.py.
   GET  /        the page            GET /stream   the lines (SSE)
   GET  /config.json  page settings (web/config.json, or --config <file> for an app of its own)
   POST /cmd     {"cmd": "rate 200"} write one console command to the board (used by the page)
+  POST /mark    {"name": "SW1"}     write a phase marker "# mark SW1" into the raw log (and the page status)
 
-Usage: sensor_dash.py [--app <app-dir> | --board <id> | --port COMx] [--http-port 8765] [--config F] [--no-open]
+Usage: sensor_dash.py [--app <app-dir>] [--board <id> | --port COMx] [--http-port 8765] [--config F] [--log F] [--no-open]
   --app: board from <app>/pse84-app.env (APP_BOARD), page settings from <app>/tests/liveview.json if present
+  raw tee: every board line, command and status goes to a timestamped log (default <app>/logs/liveview-*.log)
+  BEFORE the page sees it - read that log for the data; the page is only a viewer.
 Binds 127.0.0.1 only. Never flashes or resets the board.
 """
 import argparse
@@ -35,11 +38,20 @@ CONFIG = sd.SKILL / "web" / "config.json"      # template settings (title, quick
 class Bridge:
     """serial -> the current browser page (one queue, replaced when a new page connects)"""
 
-    def __init__(self, port, baud):
+    def __init__(self, port, baud, rawlog=None):
         self.port, self.baud = port, baud
         self.ser, self.q, self.lock = None, None, threading.Lock()
+        self.rawlog, self.t0 = rawlog, time.time()
+
+    def log(self, kind, text):
+        """raw tee: every board line ('<'), command ('>') and status ('#'), before the page sees it"""
+        if self.rawlog:
+            self.rawlog.write(f"{time.strftime('%H:%M:%S')} {time.time() - self.t0:9.3f} {kind} {text}\n")
+            self.rawlog.flush()
 
     def push(self, obj):
+        if "status" in obj:
+            self.log("#", obj["status"])
         q = self.q
         if q is not None:
             try:
@@ -69,6 +81,7 @@ class Bridge:
                 raw, buf = buf.split(b"\n", 1)
                 line = raw.decode(errors="replace").strip()
                 if line:
+                    self.log("<", line)
                     self.push({"t": time.time(), "line": line})
 
     def write(self, cmd):
@@ -76,6 +89,7 @@ class Bridge:
             if self.ser is None:
                 raise RuntimeError(f"{self.port} not open")
             self.ser.write((cmd + "\r").encode())
+            self.log(">", cmd)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -123,6 +137,16 @@ class Handler(BaseHTTPRequestHandler):
                 self.bridge.q = None
 
     def do_POST(self):
+        if self.path == "/mark":     # phase marker for the raw log (one user action per phase)
+            n = int(self.headers.get("Content-Length") or 0)
+            try:
+                name = str(json.loads(self.rfile.read(n) or b"{}").get("name", "")).strip()[:40]
+            except json.JSONDecodeError:
+                name = ""
+            if not name:
+                return self._send(409, b'{"ok": false, "error": "name required"}', "application/json")
+            self.bridge.push({"status": f"mark {name}"})
+            return self._send(200, b'{"ok": true}', "application/json")
         if self.path != "/cmd":
             return self._send(404, b"not found", "text/plain")
         try:
@@ -145,6 +169,7 @@ def main():
     ap.add_argument("--http-port", type=int, default=8765)
     ap.add_argument("--config", help="page settings JSON (default: <app>/tests/liveview.json, else web/config.json)")
     ap.add_argument("--no-open", action="store_true", help="do not open the default browser")
+    ap.add_argument("--log", help="raw log file (default: <app>/logs/liveview-<time>.log, else ./liveview-<time>.log)")
     a = ap.parse_args()
     if a.app:
         env = Path(a.app) / "pse84-app.env"
@@ -158,13 +183,18 @@ def main():
     a.config = a.config or str(CONFIG)
     json.loads(Path(a.config).read_text(encoding="utf-8"))      # fail early on a broken file
     Handler.config = a.config
-    bridge = Bridge(sd.resolve_port(a), a.baud)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    log_path = Path(a.log) if a.log else (Path(a.app) / "logs" if a.app else Path.cwd()) / f"liveview-{stamp}.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    rawlog = open(log_path, "a", encoding="utf-8", newline="\n")
+    bridge = Bridge(sd.resolve_port(a), a.baud, rawlog)
     threading.Thread(target=bridge.run, daemon=True).start()
     Handler.bridge = bridge
     srv = ThreadingHTTPServer(("127.0.0.1", a.http_port), Handler)
     srv.daemon_threads = True
     url = f"http://127.0.0.1:{a.http_port}/"
     print(f"DASH: {url}  <- {bridge.port} @ {a.baud}   (Ctrl+C stops and frees the port)", flush=True)
+    print(f"DASH: raw log {log_path}  (every board line '<', command '>', status '#')", flush=True)
     if not a.no_open:
         webbrowser.open(url)
     try:

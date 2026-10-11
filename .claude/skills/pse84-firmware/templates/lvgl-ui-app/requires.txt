@@ -1,0 +1,2 @@
+# board parts needed (packs parts.json)
+display

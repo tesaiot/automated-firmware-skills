@@ -1,0 +1,1 @@
+LVGL 9.5 bare metal on CM55 (Waveshare 4.3" DSI + FT5406 touch, VG-Lite GPU): test screen with button, slider, touch X/Y; CM33 console 'gfx' reads display/LVGL/touch status over the IPC mailbox

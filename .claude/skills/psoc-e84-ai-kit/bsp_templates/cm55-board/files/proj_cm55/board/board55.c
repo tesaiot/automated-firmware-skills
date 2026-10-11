@@ -6,6 +6,17 @@
 *******************************************************************************/
 #include "board55.h"
 #include "cybsp.h"
+#if defined(COMPONENT_FREERTOS)
+#include "FreeRTOS.h"
+#include "task.h"
+#else
+static volatile uint32_t ms_ticks;
+
+void SysTick_Handler(void)   /* overrides the weak default in the BSP startup */
+{
+    ms_ticks++;
+}
+#endif
 
 typedef struct
 {
@@ -34,7 +45,34 @@ void board55_init(void)
     {
         board55_fatal();
     }
+#if !defined(COMPONENT_FREERTOS)
+    if (0U != SysTick_Config(SystemCoreClock / 1000U))
+    {
+        board55_fatal();
+    }
+#endif
     __enable_irq();
+}
+
+uint32_t board55_millis(void)
+{
+#if defined(COMPONENT_FREERTOS)
+    return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+#else
+    return ms_ticks;
+#endif
+}
+
+void board55_delay_ms(uint32_t ms)
+{
+#if defined(COMPONENT_FREERTOS)
+    if (taskSCHEDULER_RUNNING == xTaskGetSchedulerState())
+    {
+        vTaskDelay(pdMS_TO_TICKS(ms));
+        return;
+    }
+#endif
+    Cy_SysLib_Delay(ms);
 }
 
 bool board55_led_write(uint32_t led, bool on)

@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --line: #d9dce1; --text: #1d2228; --muted: #69727d;
+  --accent: #2463eb; --accent-soft: #e6eefe; --err: #c62828; --warn: #a15c00; --ok: #2e7d32;
+  --sel: #ff3d8b; --dev: #9c27b0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --panel: #1e2228; --line: #343a42; --text: #e6e9ed; --muted: #9aa3ad;
+    --accent: #6c9cff; --accent-soft: #24324d; --err: #ff6b6b; --warn: #f0b04a; --ok: #66bb6a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --panel: #1e2228; --line: #343a42; --text: #e6e9ed; --muted: #9aa3ad;
+  --accent: #6c9cff; --accent-soft: #24324d; --err: #ff6b6b; --warn: #f0b04a; --ok: #66bb6a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+       display: grid; grid-template-rows: auto 1fr; }
+header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--panel);
+         border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+header h1 { font-size: 15px; margin: 0 8px 0 0; }
+header .path { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+header .spacer { flex: 1; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .45; cursor: default; }
+main { display: grid; grid-template-columns: 220px 1fr 300px; min-height: 0; }
+aside, section { min-height: 0; overflow: auto; }
+aside { background: var(--panel); border-right: 1px solid var(--line); padding: 10px; }
+aside.right { border-right: 0; border-left: 1px solid var(--line); }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
+h2:first-child { margin-top: 0; }
+.palette { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.palette button { text-align: left; font-size: 12px; }
+.tree { list-style: none; padding: 0; margin: 0; font-size: 12px; }
+.tree ul { list-style: none; padding-left: 14px; margin: 0; }
+.tree .node { padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree .node:hover { background: var(--accent-soft); }
+.tree .node.sel { background: var(--accent); color: #fff; }
+.tree .t { color: var(--muted); font-size: 10px; margin-left: 4px; }
+.tree .node.sel .t { color: #dfe8ff; }
+.center { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
+.tabs { display: flex; gap: 4px; padding: 8px 12px 0; align-items: center; flex-wrap: wrap; }
+.tabs button.on { background: var(--accent-soft); border-color: var(--accent); }
+.tabs label { margin-left: auto; color: var(--muted); font-size: 12px; display: flex; gap: 4px; align-items: center; }
+.stage { overflow: auto; padding: 12px; min-height: 0; }
+.frame { position: relative; margin: 0 auto; box-shadow: 0 0 0 10px #000, 0 6px 24px rgba(0,0,0,.35); border-radius: 2px; }
+.lint { padding: 6px 12px 10px; font-size: 12px; max-height: 120px; overflow: auto; border-top: 1px solid var(--line); background: var(--panel); }
+.lint .e { color: var(--err); } .lint .w { color: var(--warn); } .lint .o { color: var(--ok); } .lint .d { color: var(--dev); }
+.props label { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; margin: 4px 0; font-size: 12px; }
+.props label > span { color: var(--muted); }
+.props input[type=text], .props input[type=number], .props select, .props textarea {
+  width: 100%; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.props textarea { font: 12px/1.35 ui-monospace, Consolas, monospace; min-height: 70px; resize: vertical; }
+.props .row { display: flex; gap: 4px; align-items: center; }
+.props .row input[type=color] { width: 34px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 4px; }
+.props .btns { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.props .x { padding: 0 6px; }
+.chat { display: flex; flex-direction: column; gap: 6px; }
+.msgs { display: flex; flex-direction: column; gap: 6px; max-height: 36vh; overflow: auto; padding-right: 2px; }
+.msg { padding: 6px 8px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+.msg.user { background: var(--accent-soft); align-self: flex-end; max-width: 92%; }
+.msg.claude { background: var(--bg); border: 1px solid var(--line); max-width: 96%; }
+.msg.system { color: var(--muted); font-style: italic; font-size: 11px; }
+.msg .who { font-size: 10px; color: var(--muted); display: block; }
+.queue { font-size: 12px; color: var(--warn); }
+.ask textarea { width: 100%; min-height: 64px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); resize: vertical; }
+.ask .row { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.chip { font-size: 11px; background: var(--accent-soft); border-radius: 10px; padding: 1px 8px; }
+.muted { color: var(--muted); }
+.spin { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--warn); border-right-color: transparent; border-radius: 50%; animation: r 1s linear infinite; vertical-align: -1px; }
+@keyframes r { to { transform: rotate(360deg); } }
+/* ---------------- LVGL approximation (default theme, 130 DPI, large display) -------------- */
+.lv-root { position: absolute; left: 0; top: 0; width: 800px; height: 480px; overflow: hidden; transform-origin: 0 0;
+           font-family: Montserrat, "Segoe UI", sans-serif; font-weight: 500; }
+.lv { position: absolute; box-sizing: border-box; }
+.lv.flexitem { position: relative; flex-shrink: 0; }
+.lv-content { position: relative; width: 100%; height: 100%; }
+.lv-text { white-space: pre; }
+.lv.sel { outline: 2px solid var(--sel); outline-offset: 1px; z-index: 5; }
+.lv.hov { outline: 1px dashed var(--sel); }
+.lv-handle { position: absolute; right: -6px; bottom: -6px; width: 10px; height: 10px; background: var(--sel); border: 1px solid #fff;
+             cursor: nwse-resize; z-index: 10; }
+.lv-dev { position: absolute; border: 1.5px dashed var(--dev); pointer-events: none; z-index: 20; }
+.lv-dev span { position: absolute; left: 0; top: -14px; font: 10px/1 system-ui; color: #fff; background: var(--dev); padding: 1px 3px; white-space: nowrap; }
+@keyframes lvspin { to { transform: rotate(360deg); } }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } aside.right, aside { border: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>UI Designer</h1>
+  <span class="path" id="path"></span>
+  <span class="muted" id="rev"></span>
+  <span class="spacer"></span>
+  <button id="undo" title="Ctrl+Z">Undo</button>
+  <button id="redo" title="Ctrl+Y">Redo</button>
+  <button id="submit" class="primary" title="Claude Code generates the C code, builds, flashes and tests (text in the Ask box = note)">Submit</button>
+</header>
+<main>
+  <aside>
+    <h2>Add widget</h2>
+    <div class="palette" id="palette"></div>
+    <h2>Widgets</h2>
+    <ul class="tree" id="tree"></ul>
+  </aside>
+  <section class="center">
+    <div class="tabs" id="tabs"></div>
+    <div class="stage" id="stage"><div class="frame" id="frame"></div></div>
+    <div class="lint" id="lint"></div>
+  </section>
+  <aside class="right">
+    <h2>Ask Claude Code</h2>
+    <div class="chat">
+      <div class="msgs" id="msgs"></div>
+      <div class="queue" id="queue"></div>
+      <div class="ask">
+        <textarea id="askText" placeholder="e.g. add a bar under the slider bound to 'level', green; make the title bigger"></textarea>
+        <div class="row"><span class="chip" id="selChip">nothing selected</span><span class="spacer" style="flex:1"></span>
+          <button id="askBtn" class="primary" title="Ctrl+Enter">Send</button></div>
+      </div>
+    </div>
+    <h2 id="propsTitle">Properties</h2>
+    <div class="props" id="props"></div>
+  </aside>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const W = 800, H = 480;
+const DEFAULT_SIZE = { container: [130, 130], slider: [260, 13], bar: [260, 13], arc: [130, 130], switch: [52, 30],
+                       spinner: [130, 130], dropdown: [130, null] };
+const KIDS = new Set(["container", "button"]);
+const NEW_WIDGET = {
+  container: { w: 220, h: 120 }, label: { text: "Label" }, button: { text: "Button", w: 140, h: 50 },
+  slider: { w: 240, min: 0, max: 100, value: 50 }, bar: { w: 240, h: 16, min: 0, max: 100, value: 50 },
+  arc: { w: 130, h: 130, min: 0, max: 100, value: 40 }, switch: {}, checkbox: { text: "Option" },
+  dropdown: { w: 160, options: ["One", "Two", "Three"] }, spinner: { w: 60, h: 60 },
+};
+let S = null;               // server state
+let spec = null;            // working copy (== S.spec unless dragging)
+let tick = 0, curScreen = 0, selId = null, dragging = null, showDev = true, scale = 1;
+
+/* ------------------------------------------------------------------ helpers */
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function walk(sp, fn) {
+  const rec = (node, parent, scr) => (node.children || []).forEach((ch, i) => { fn(ch, node, scr, i); rec(ch, ch, scr); });
+  (sp.screens || []).forEach((s) => rec(s, s, s));
+}
+function find(sp, id) {
+  let hit = null;
+  walk(sp, (w, parent, scr, i) => { if (w.id === id) hit = { w, parent, scr, i }; });
+  return hit;
+}
+function allIds(sp) {
+  const ids = new Set((sp.data || []).map((d) => d.id));
+  (sp.screens || []).forEach((s) => ids.add(s.id));
+  walk(sp, (w) => ids.add(w.id));
+  return ids;
+}
+function uniqueId(sp, base) {
+  const ids = allIds(sp);
+  for (let n = 1; ; n++) if (!ids.has(`${base}_${n}`)) return `${base}_${n}`;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+function lineH(px) { return Math.round(px * 1.13); }       // LVGL Montserrat: 14 -> 16, 24 -> 27
+function fontPx(f) { const m = /montserrat_(\d+)/.exec(f || ""); return m ? +m[1] : 14; }
+
+/* ------------------------------------------------------------------ server I/O */
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  let j = {}; try { j = await r.json(); } catch (e) { /* empty */ }
+  return { ok: r.ok, status: r.status, ...j };
+}
+async function poll() {
+  for (;;) {
+    try {
+      const r = await fetch(`/api/state?since=${tick}`);
+      const st = await r.json();
+      const revChanged = !S || st.rev !== S.rev;
+      S = st; tick = st.tick;
+      if (revChanged && !dragging) { spec = clone(S.spec); render(); }
+      else renderChat(), renderLint();
+    } catch (e) {
+      $("rev").textContent = "server not reachable - is ui_server.py running?";
+      await new Promise((res) => setTimeout(res, 2000));
+    }
+  }
+}
+async function commit(newSpec, note) {
+  const r = await api("/api/spec", { base_rev: S.rev, spec: newSpec, note });
+  if (!r.ok) {
+    flash(r.status === 409 ? r.error : "Not saved:\n" + (r.errors || [r.error]).join("\n"));
+    spec = clone(S.spec); render();
+  }
+}
+function flash(text) { S.messages.push({ who: "system", text, id: Date.now() }); renderChat(); }
+
+/* ------------------------------------------------------------------ LVGL-ish theme */
+function theme() {
+  const t = spec.theme || {};
+  const dark = !!t.dark;
+  return {
+    dark, primary: t.primary || "#2196F3", secondary: t.secondary || "#F44336", font: fontPx(t.font || "montserrat_14"),
+    scr: dark ? "#15171A" : "#F5F5F5", card: dark ? "#282B30" : "#FFFFFF", text: dark ? "#FAFAFA" : "#212121",
+    grey: dark ? "#2F3237" : "#E0E0E0",
+  };
+}
+function sizeCss(v, def) {
+  if (v === undefined || v === null) return def === null || def === undefined ? "auto" : def + "px";
+  if (v === "content") return "auto";
+  if (typeof v === "string" && v.endsWith("%")) return v;
+  return v + "px";
+}
+function placeAbs(el, w) {
+  const a = w.align || "top_left", x = w.x || 0, y = w.y || 0;
+  const [vy, hx] = a === "center" ? ["mid", "mid"] : a.includes("_") ? a.split("_") : ["top", "left"];
+  const v = { top: "top", bottom: "bottom", left: "mid", right: "mid", mid: "mid" }[vy] || "top";
+  const h = a.startsWith("left") ? "left" : a.startsWith("right") ? "right" : hx === "mid" ? "mid" : hx;
+  const vert = a.startsWith("left") || a.startsWith("right") || a === "center" ? "mid" : v;
+  let tx = "0", ty = "0";
+  if (h === "left") el.style.left = x + "px";
+  else if (h === "right") el.style.right = (-x) + "px";
+  else { el.style.left = `calc(50% + ${x}px)`; tx = "-50%"; }
+  if (vert === "top") el.style.top = y + "px";
+  else if (vert === "bottom") el.style.bottom = (-y) + "px";
+  else { el.style.top = `calc(50% + ${y}px)`; ty = "-50%"; }
+  if (tx !== "0" || ty !== "0") el.style.transform = `translate(${tx}, ${ty})`;
+}
+function applyFlex(content, lay) {
+  if (!lay) return;
+  const flow = lay.flex || "row";
+  content.style.display = "flex";
+  content.style.flexDirection = flow.startsWith("column") ? "column" : "row";
+  content.style.flexWrap = flow.endsWith("wrap") ? "wrap" : "nowrap";
+  const map = { start: "flex-start", center: "center", end: "flex-end", space_between: "space-between",
+                space_around: "space-around", space_evenly: "space-evenly" };
+  content.style.justifyContent = map[lay.main || "start"];
+  content.style.alignItems = map[lay.cross || "start"] || "flex-start";
+  content.style.alignContent = map[lay.cross || "start"];
+}
+function textEl(txt, cls) { const s = document.createElement("div"); s.className = "lv-text " + (cls || ""); s.textContent = txt; return s; }
+
+function renderWidget(w, parentFlex, th, parentGap) {
+  const el = document.createElement("div");
+  el.className = "lv" + (parentFlex ? " flexitem" : "");
+  el.dataset.id = w.id;
+  const st = w.style || {};
+  const def = DEFAULT_SIZE[w.type] || [null, null];
+  el.style.width = sizeCss(w.w, def[0]);
+  el.style.height = sizeCss(w.h, def[1]);
+  if (w.grow) el.style.flexGrow = w.grow;
+  if (!parentFlex) placeAbs(el, w);
+  if (w.hidden) el.style.opacity = "0.25";
+  const color = st.text_color || null;
+  if (color) el.style.color = color;
+  if (st.font) { el.style.fontSize = fontPx(st.font) + "px"; el.style.lineHeight = lineH(fontPx(st.font)) + "px"; }
+  if (st.text_align) el.style.textAlign = st.text_align;
+  const accent = st.accent || th.primary;
+  let content = null;
+
+  const card = () => {
+    el.style.background = th.card; el.style.border = `2px solid ${th.grey}`; el.style.borderRadius = "10px"; el.style.padding = "20px";
+  };
+  switch (w.type) {
+    case "container":
+      card(); content = document.createElement("div"); content.className = "lv-content"; el.appendChild(content);
+      content.style.gap = "11px";
+      break;
+    case "label": {
+      const txt = w.bind ? (w.fmt || "%d").replace(/%%/g, "\u0000").replace(/%[-+ 0#]*\d*l?[di]/, String(dataInit(w.bind))).replace(/\u0000/g, "%") : (w.text || "");
+      const t = textEl(txt);
+      if (w.w !== undefined && w.w !== "content" && (w.long_mode || "wrap") === "wrap") t.style.whiteSpace = "pre-wrap";
+      if (w.long_mode === "dot") { t.style.overflow = "hidden"; t.style.textOverflow = "ellipsis"; }
+      if (w.long_mode === "clip" || w.long_mode === "scroll") t.style.overflow = "hidden";
+      el.appendChild(t);
+      break;
+    }
+    case "button":
+      el.style.background = accent; el.style.color = st.text_color || "#fff"; el.style.borderRadius = "13px";
+      el.style.padding = "11px 20px";
+      if (!th.dark) el.style.boxShadow = `0 2px 2px ${hexA("#9E9E9E", .5)}`;
+      if (w.checkable && (w.checked || (w.bind && dataInit(w.bind)))) el.style.background = th.secondary;
+      content = document.createElement("div"); content.className = "lv-content"; el.appendChild(content);
+      if (w.text !== undefined) {
+        const t = textEl(w.text);
+        t.style.position = "absolute"; t.style.left = "50%"; t.style.top = "50%"; t.style.transform = "translate(-50%,-50%)";
+        content.appendChild(t);
+      }
+      break;
+    case "slider": case "bar": {
+      const lo = w.min ?? 0, hi = w.max ?? 100;
+      const v = w.bind ? dataInit(w.bind) : (w.value ?? lo);
+      const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo || 1)));
+      el.style.background = hexA(th.primary, th.dark ? .35 : .22); el.style.borderRadius = "999px";
+      const ind = document.createElement("div");
+      ind.style.cssText = `position:absolute;left:0;top:0;bottom:0;width:${f * 100}%;border-radius:999px;background:${accent}`;
+      el.appendChild(ind);
+      if (w.type === "slider") {
+        const k = document.createElement("div");
+        k.style.cssText = `position:absolute;top:-6px;bottom:-6px;aspect-ratio:1;left:calc(${f * 100}% - 12px);border-radius:50%;background:${accent}`;
+        el.appendChild(k);
+      }
+      break;
+    }
+    case "arc": case "spinner": {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox", "0 0 100 100"); svg.style.cssText = "width:100%;height:100%;overflow:visible";
+      const sw = 12 * 100 / (parseFloat(el.style.width) || 130);
+      const r = 50 - sw / 2;
+      const arc = (a0, a1, col) => {
+        const p = (a) => [50 + r * Math.cos(a * Math.PI / 180), 50 + r * Math.sin(a * Math.PI / 180)];
+        const [x0, y0] = p(a0), [x1, y1] = p(a1); const large = ((a1 - a0 + 360) % 360) > 180 ? 1 : 0;
+        const path = document.createElementNS(svgNS, "path");
+        path.setAttribute("d", `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`);
+        path.setAttribute("fill", "none"); path.setAttribute("stroke", col); path.setAttribute("stroke-width", sw);
+        path.setAttribute("stroke-linecap", "round"); svg.appendChild(path); return path;
+      };
+      if (w.type === "arc") {
+        const lo = w.min ?? 0, hi = w.max ?? 100, v = w.bind ? dataInit(w.bind) : (w.value ?? lo);
+        const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo || 1)));
+        arc(135, 135 + 269.9, th.grey);
+        if (f > 0) arc(135, 135 + 270 * f, accent);
+      } else {
+        arc(0, 359.9, th.grey);
+        arc(0, 60, accent);
+        svg.style.animation = "lvspin 1s linear infinite";
+      }
+      el.appendChild(svg);
+      break;
+    }
+    case "switch": {
+      const on = w.bind ? !!dataInit(w.bind) : !!w.checked;
+      el.style.background = on ? accent : th.grey; el.style.borderRadius = "999px";
+      const k = document.createElement("div");
+      k.style.cssText = `position:absolute;top:3px;bottom:3px;aspect-ratio:1;border-radius:50%;background:#fff;${on ? "right" : "left"}:3px`;
+      el.appendChild(k);
+      break;
+    }
+    case "checkbox": {
+      const on = w.bind ? !!dataInit(w.bind) : !!w.checked;
+      el.style.display = "flex"; el.style.alignItems = "center"; el.style.gap = "8px";
+      const m = document.createElement("div");
+      const sz = Math.round((fontPx(st.font) || th.font) + 8);
+      m.style.cssText = `width:${sz}px;height:${sz}px;border:2px solid ${accent};border-radius:5px;flex:none;` +
+        `background:${on ? accent : th.card};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${sz - 6}px`;
+      m.textContent = on ? "✓" : "";
+      el.appendChild(m); el.appendChild(textEl(w.text || ""));
+      break;
+    }
+    case "dropdown": {
+      card(); el.style.padding = "11px";
+      const opts = w.options || [];
+      const sel = w.bind ? dataInit(w.bind) : (w.selected || 0);
+      el.style.display = "flex"; el.style.justifyContent = "space-between"; el.style.gap = "8px";
+      const t = textEl(opts[sel] ?? ""); t.style.overflow = "hidden"; el.appendChild(t);
+      el.appendChild(textEl("▾"));
+      break;
+    }
+  }
+  if (st.bg) { el.style.background = hexA(st.bg, st.bg_opa !== undefined ? st.bg_opa / 100 : 1); }
+  else if (st.bg_opa !== undefined && w.type !== "slider" && w.type !== "bar") {
+    const cur = getComputedStyleLite(el.style.background, th);
+    el.style.background = cur ? hexA(cur, st.bg_opa / 100) : "transparent";
+  }
+  if (st.radius !== undefined) el.style.borderRadius = st.radius + "px";
+  if (st.border_width !== undefined) el.style.borderWidth = st.border_width + "px", el.style.borderStyle = st.border_width ? "solid" : "none";
+  if (st.border_color) el.style.borderColor = st.border_color, el.style.borderStyle = "solid";
+  if (st.pad !== undefined) el.style.padding = st.pad + "px";
+  if (st.shadow !== undefined) el.style.boxShadow = st.shadow ? `0 0 ${st.shadow}px rgba(0,0,0,.5)` : "none";
+  if (content) {
+    const lay = w.layout;
+    if (lay) applyFlex(content, lay);
+    const gap = lay && lay.gap !== undefined ? lay.gap : st.gap !== undefined ? st.gap : (w.type === "button" ? 5 : 11);
+    content.style.gap = gap + "px";
+    if (w.h === "content" || (w.h === undefined && DEFAULT_SIZE[w.type] === undefined)) content.style.height = "auto";
+    if (w.w === "content" || (w.w === undefined && DEFAULT_SIZE[w.type] === undefined)) content.style.width = "auto";
+    if (lay && (w.w === "content" || w.w === undefined)) content.style.width = "max-content";
+    (w.children || []).forEach((ch) => content.appendChild(renderWidget(ch, !!lay, th, gap)));
+  }
+  if (w.id === selId) {
+    el.classList.add("sel");
+    if (!parentFlex || true) { const h = document.createElement("div"); h.className = "lv-handle"; h.dataset.handle = w.id; el.appendChild(h); }
+  }
+  return el;
+}
+function getComputedStyleLite(bg, th) {
+  const m = /^#([0-9a-f]{6})$/i.exec(bg || "");
+  if (m) return bg;
+  const r = /rgb\((\d+), (\d+), (\d+)\)/.exec(bg || "");
+  if (r) return "#" + [r[1], r[2], r[3]].map((v) => (+v).toString(16).padStart(2, "0")).join("");
+  return null;
+}
+function dataInit(id) {
+  const d = (spec.data || []).find((x) => x.id === id);
+  return d ? (d.init || 0) : 0;
+}
+
+/* ------------------------------------------------------------------ rendering */
+function render() {
+  if (!spec) return;
+  if (curScreen >= spec.screens.length) curScreen = 0;
+  if (selId && !find(spec, selId) && !spec.screens.some((s) => s.id === selId)) selId = null;
+  $("path").textContent = S.path;
+  $("rev").textContent = `rev ${S.rev}`;
+  $("undo").disabled = !S.undo; $("redo").disabled = !S.redo;
+  renderTabs(); renderCanvas(); renderTree(); renderProps(); renderChat(); renderLint();
+}
+function renderTabs() {
+  const tabs = $("tabs"); tabs.innerHTML = "";
+  spec.screens.forEach((s, i) => {
+    const b = document.createElement("button"); b.textContent = s.id; if (i === curScreen) b.className = "on";
+    b.onclick = () => { curScreen = i; selId = null; render(); }; tabs.appendChild(b);
+  });
+  const add = document.createElement("button"); add.textContent = "+ screen"; add.title = "add a screen";
+  add.onclick = () => { const n = clone(spec); const id = uniqueId(n, "screen"); n.screens.push({ id, children: [] }); curScreen = n.screens.length - 1; commit(n, "add screen " + id); };
+  tabs.appendChild(add);
+  const lab = document.createElement("label");
+  lab.innerHTML = `<input type="checkbox" id="devToggle" ${showDev ? "checked" : ""}> device boxes` + (S.device ? "" : " <span class='muted'>(none yet)</span>");
+  tabs.appendChild(lab);
+  lab.querySelector("input").onchange = (e) => { showDev = e.target.checked; renderCanvas(); };
+}
+function fitScale() {
+  const avail = $("stage").clientWidth - 40;
+  scale = Math.max(0.3, Math.min(1.25, avail / W));
+}
+function renderCanvas() {
+  fitScale();
+  const th = theme(), scr = spec.screens[curScreen];
+  const frame = $("frame"); frame.innerHTML = "";
+  frame.style.width = W * scale + "px"; frame.style.height = H * scale + "px";
+  const root = document.createElement("div"); root.className = "lv-root"; root.id = "lvroot";
+  root.style.transform = `scale(${scale})`;
+  root.style.background = (scr.style && scr.style.bg) ? scr.style.bg : th.scr;
+  root.style.color = (scr.style && scr.style.text_color) || th.text;
+  const rootPx = (scr.style && scr.style.font) ? fontPx(scr.style.font) : th.font;
+  root.style.fontSize = rootPx + "px"; root.style.lineHeight = lineH(rootPx) + "px";
+  const content = document.createElement("div"); content.className = "lv-content";
+  if (scr.style && scr.style.pad !== undefined) content.style.padding = scr.style.pad + "px";
+  applyFlex(content, scr.layout);
+  if (scr.layout) content.style.gap = (scr.layout.gap ?? 11) + "px";
+  root.appendChild(content);
+  (scr.children || []).forEach((w) => content.appendChild(renderWidget(w, !!scr.layout, th)));
+  frame.appendChild(root);
+  // boxes in display pixels
+  const r0 = root.getBoundingClientRect(), boxes = {};
+  root.querySelectorAll(".lv[data-id]").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    boxes[el.dataset.id] = [Math.round((r.left - r0.left) / scale), Math.round((r.top - r0.top) / scale),
+                            Math.round(r.width / scale), Math.round(r.height / scale)];
+  });
+  window.__boxes = boxes;
+  if (showDev && S.device && S.device.layout) {
+    Object.entries(S.device.layout).forEach(([id, b]) => {
+      if (b.scr !== scr.id || !b.vis) return;
+      const d = document.createElement("div"); d.className = "lv-dev";
+      d.style.cssText += `left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`;
+      const e = boxes[id]; const off = e ? Math.max(Math.abs(e[0] - b.x), Math.abs(e[1] - b.y), Math.abs(e[2] - b.w), Math.abs(e[3] - b.h)) : null;
+      if (off !== null && off > 3) { const s = document.createElement("span"); s.textContent = `${id} Δ${off}px`; d.appendChild(s); }
+      root.appendChild(d);
+    });
+  }
+  if (!dragging) {
+    const all = Object.assign({}, window.__allBoxes || {}, boxes);
+    window.__allBoxes = all;
+    api("/api/boxes", { rev: S.rev, boxes: all });
+  }
+  root.addEventListener("mousedown", onDown);
+}
+
+function renderTree() {
+  const tree = $("tree"); tree.innerHTML = "";
+  const scr = spec.screens[curScreen];
+  const li = document.createElement("li");
+  li.innerHTML = `<div class="node ${selId === scr.id ? "sel" : ""}">${esc(scr.id)}<span class="t">screen</span></div>`;
+  li.firstChild.onclick = () => { selId = scr.id; render(); };
+  const rec = (node) => {
+    const ul = document.createElement("ul");
+    (node.children || []).forEach((w) => {
+      const l = document.createElement("li");
+      const d = document.createElement("div"); d.className = "node" + (w.id === selId ? " sel" : "");
+      d.innerHTML = `${esc(w.id)}<span class="t">${w.type}${w.on ? " ⚡" : ""}${w.bind ? " ⇄" + esc(w.bind) : ""}</span>`;
+      d.onclick = () => { selId = w.id; render(); };
+      l.appendChild(d);
+      if (w.children && w.children.length) l.appendChild(rec(w));
+      ul.appendChild(l);
+    });
+    return ul;
+  };
+  li.appendChild(rec(scr));
+  tree.appendChild(li);
+}
+
+/* ------------------------------------------------------------------ properties */
+function field(label, input) {
+  const l = document.createElement("label"); l.innerHTML = `<span>${label}</span>`; l.appendChild(input); return l;
+}
+function inp(type, value, onchange, extra) {
+  const i = document.createElement("input"); i.type = type;
+  if (type === "checkbox") i.checked = !!value; else i.value = value ?? "";
+  Object.assign(i, extra || {});
+  i.onchange = () => onchange(type === "checkbox" ? i.checked : i.value);
+  return i;
+}
+function sel(options, value, onchange) {
+  const s = document.createElement("select");
+  options.forEach((o) => { const op = document.createElement("option"); op.value = o; op.textContent = o === "" ? "-" : o; if (o === (value ?? "")) op.selected = true; s.appendChild(op); });
+  s.onchange = () => onchange(s.value);
+  return s;
+}
+function colorField(value, onchange) {
+  const row = document.createElement("div"); row.className = "row";
+  const c = inp("color", value || "#000000", (v) => onchange(v.toUpperCase()));
+  const t = document.createElement("span"); t.className = "muted"; t.textContent = value || "theme";
+  const x = document.createElement("button"); x.className = "x"; x.textContent = "×"; x.title = "use the theme"; x.onclick = () => onchange(undefined);
+  row.append(c, t, x); return row;
+}
+function edit(mut, note) {
+  const n = clone(spec); mut(n); commit(n, note);
+}
+function setKey(obj, k, v) { if (v === undefined || v === "" || v === null) delete obj[k]; else obj[k] = v; }
+function numOrUndef(v) { return v === "" ? undefined : Number.isFinite(+v) ? Math.round(+v) : undefined; }
+function sizeVal(v) { v = String(v).trim(); if (!v) return undefined; if (v === "content" || /^\d{1,3}%$/.test(v)) return v; return numOrUndef(v); }
+
+function renderProps() {
+  const P = $("props"); P.innerHTML = "";
+  $("selChip").textContent = selId ? "selected: " + selId : "nothing selected";
+  const scr = spec.screens[curScreen];
+  if (!selId || selId === scr.id) return screenProps(P, scr);
+  const hit = find(spec, selId); if (!hit) return;
+  const w = hit.w, flexParent = !!hit.parent.layout;
+  $("propsTitle").textContent = `Properties - ${w.type}`;
+  const upd = (k, conv) => (v) => edit((n) => setKey(find(n, selId).w, k, conv ? conv(v) : v), `${selId}.${k}`);
+  const btns = document.createElement("div"); btns.className = "btns";
+  const mk = (t, f, title) => { const b = document.createElement("button"); b.textContent = t; b.onclick = f; if (title) b.title = title; btns.appendChild(b); };
+  mk("↑", () => move(-1), "move up (draw order / flex order)"); mk("↓", () => move(1), "move down");
+  mk("Parent", () => { selId = hit.parent.type ? hit.parent.id : scr.id; render(); });
+  mk("Duplicate", duplicate); mk("Delete", removeSel, "Del");
+  P.appendChild(btns);
+  const idI = inp("text", w.id, (v) => renameSel(v.trim())); P.appendChild(field("id", idI));
+  if (!flexParent) {
+    P.appendChild(field("align", sel(S.aligns, w.align || "top_left", upd("align", (v) => v === "top_left" ? undefined : v))));
+    P.appendChild(field("x", inp("number", w.x ?? 0, upd("x", (v) => numOrUndef(v) || undefined))));
+    P.appendChild(field("y", inp("number", w.y ?? 0, upd("y", (v) => numOrUndef(v) || undefined))));
+  } else {
+    P.appendChild(field("grow", inp("number", w.grow ?? "", upd("grow", numOrUndef), { min: 0, max: 10 })));
+  }
+  P.appendChild(field("w", inp("text", w.w ?? "", upd("w", sizeVal), { placeholder: "px | content | 50%" })));
+  P.appendChild(field("h", inp("text", w.h ?? "", upd("h", sizeVal), { placeholder: "px | content | 50%" })));
+  const dataIds = [""].concat((spec.data || []).map((d) => d.id));
+  const t = w.type;
+  if (["label", "button", "checkbox"].includes(t)) P.appendChild(field("text", inp("text", w.text ?? "", upd("text", (v) => v))));
+  if (t === "label") {
+    P.appendChild(field("bind", sel(dataIds, w.bind, upd("bind", (v) => v || undefined))));
+    P.appendChild(field("fmt", inp("text", w.fmt ?? "", upd("fmt", (v) => v || undefined), { placeholder: "Value: %d" })));
+    P.appendChild(field("long_mode", sel(["", "wrap", "dot", "scroll", "clip"], w.long_mode, upd("long_mode", (v) => v || undefined))));
+  }
+  if (["slider", "bar", "arc"].includes(t)) {
+    ["min", "max", "value"].forEach((k) => P.appendChild(field(k, inp("number", w[k] ?? "", upd(k, numOrUndef)))));
+    P.appendChild(field("bind", sel(dataIds, w.bind, upd("bind", (v) => v || undefined))));
+  }
+  if (["switch", "checkbox"].includes(t)) {
+    P.appendChild(field("checked", inp("checkbox", w.checked, upd("checked", (v) => v || undefined))));
+    P.appendChild(field("bind", sel(dataIds, w.bind, upd("bind", (v) => v || undefined))));
+  }
+  if (t === "button") {
+    P.appendChild(field("checkable", inp("checkbox", w.checkable, upd("checkable", (v) => v || undefined))));
+    if (w.checkable) P.appendChild(field("bind", sel(dataIds, w.bind, upd("bind", (v) => v || undefined))));
+  }
+  if (t === "dropdown") {
+    const ta = document.createElement("textarea"); ta.value = (w.options || []).join("\n"); ta.style.minHeight = "54px";
+    ta.onchange = () => upd("options")(ta.value.split("\n").map((s) => s.trim()).filter(Boolean));
+    P.appendChild(field("options", ta));
+    P.appendChild(field("selected", inp("number", w.selected ?? "", upd("selected", numOrUndef))));
+    P.appendChild(field("bind", sel(dataIds, w.bind, upd("bind", (v) => v || undefined))));
+  }
+  P.appendChild(field("hidden", inp("checkbox", w.hidden, upd("hidden", (v) => v || undefined))));
+  if (KIDS.has(t)) layoutProps(P, w, (mut, note) => edit((n) => mut(find(n, selId).w), note));
+  styleProps(P, w.style || {}, t, (mut, note) => edit((n) => { const ww = find(n, selId).w; ww.style = ww.style || {}; mut(ww.style); if (!Object.keys(ww.style).length) delete ww.style; }, note));
+  const h = document.createElement("h2"); h.textContent = "Events (JSON)"; P.appendChild(h);
+  const ev = document.createElement("textarea"); ev.value = w.on ? JSON.stringify(w.on, null, 1) : "";
+  ev.placeholder = '{"clicked": {"goto": "settings"}}\n{"clicked": "user"}\n{"value_changed": [{"set": "x", "value": 1}, "user"]}';
+  ev.onchange = () => { try { const v = ev.value.trim() ? JSON.parse(ev.value) : undefined; upd("on")(v); } catch (e) { flash("events: " + e.message); } };
+  P.appendChild(ev);
+  const h2 = document.createElement("h2"); h2.textContent = "Widget JSON"; P.appendChild(h2);
+  const raw = document.createElement("textarea"); raw.value = JSON.stringify(w, null, 1); raw.style.minHeight = "120px";
+  const ap = document.createElement("button"); ap.textContent = "Apply JSON";
+  ap.onclick = () => { try { const v = JSON.parse(raw.value); edit((n) => { const hh = find(n, selId); hh.parent.children[hh.i] = v; }, `${selId} json`); selId = v.id; } catch (e) { flash("JSON: " + e.message); } };
+  P.append(raw, ap);
+}
+function layoutProps(P, obj, editFn) {
+  const h = document.createElement("h2"); h.textContent = "Layout"; P.appendChild(h);
+  const lay = obj.layout || {};
+  P.appendChild(field("flex", sel(["", "row", "column", "row_wrap", "column_wrap"], lay.flex, (v) => editFn((o) => { if (!v) delete o.layout; else o.layout = Object.assign({}, o.layout || {}, { flex: v }); }, "layout"))));
+  if (obj.layout) {
+    const places = ["start", "center", "end", "space_between", "space_around", "space_evenly"];
+    P.appendChild(field("main", sel(places, lay.main || "start", (v) => editFn((o) => setKey(o.layout, "main", v === "start" ? undefined : v), "layout.main"))));
+    P.appendChild(field("cross", sel(places.slice(0, 3), lay.cross || "start", (v) => editFn((o) => setKey(o.layout, "cross", v === "start" ? undefined : v), "layout.cross"))));
+    P.appendChild(field("gap", inp("number", lay.gap ?? "", (v) => editFn((o) => setKey(o.layout, "gap", numOrUndef(v)), "layout.gap"))));
+  }
+}
+function styleProps(P, st, type, editFn) {
+  const h = document.createElement("h2"); h.textContent = "Style"; P.appendChild(h);
+  const set = (k, conv) => (v) => editFn((s) => setKey(s, k, conv ? conv(v) : v), "style." + k);
+  P.appendChild(field("bg", colorField(st.bg, set("bg"))));
+  P.appendChild(field("bg_opa %", inp("number", st.bg_opa ?? "", set("bg_opa", numOrUndef), { min: 0, max: 100 })));
+  P.appendChild(field("text_color", colorField(st.text_color, set("text_color"))));
+  P.appendChild(field("font", sel([""].concat(S.fonts), st.font, set("font", (v) => v || undefined))));
+  if (type !== "screen") {
+    P.appendChild(field("accent", colorField(st.accent, set("accent"))));
+    P.appendChild(field("radius", inp("number", st.radius ?? "", set("radius", numOrUndef))));
+    P.appendChild(field("border_width", inp("number", st.border_width ?? "", set("border_width", numOrUndef))));
+    P.appendChild(field("border_color", colorField(st.border_color, set("border_color"))));
+    P.appendChild(field("pad", inp("number", st.pad ?? "", set("pad", numOrUndef))));
+    P.appendChild(field("text_align", sel(["", "left", "center", "right"], st.text_align, set("text_align", (v) => v || undefined))));
+    P.appendChild(field("shadow", inp("number", st.shadow ?? "", set("shadow", numOrUndef))));
+  }
+}
+function screenProps(P, scr) {
+  $("propsTitle").textContent = `Screen - ${scr.id}`;
+  const editScr = (mut, note) => edit((n) => mut(n.screens[curScreen]), note);
+  P.appendChild(field("id", inp("text", scr.id, (v) => renameScreen(v.trim()))));
+  const b = document.createElement("div"); b.className = "btns";
+  const del = document.createElement("button"); del.textContent = "Delete screen"; del.disabled = spec.screens.length < 2;
+  del.onclick = () => { if (confirm(`Delete screen ${scr.id}?`)) edit((n) => { n.screens.splice(curScreen, 1); curScreen = 0; }, "delete screen"); };
+  b.appendChild(del); P.appendChild(b);
+  styleProps(P, scr.style || {}, "screen", (mut, note) => editScr((s) => { s.style = s.style || {}; mut(s.style); if (!Object.keys(s.style).length) delete s.style; }, note));
+  layoutProps(P, scr, editScr);
+  const h = document.createElement("h2"); h.textContent = "Theme"; P.appendChild(h);
+  const th = spec.theme || {};
+  const editTh = (k, v) => edit((n) => { n.theme = n.theme || {}; setKey(n.theme, k, v); }, "theme." + k);
+  P.appendChild(field("dark", inp("checkbox", th.dark, (v) => editTh("dark", v))));
+  P.appendChild(field("primary", colorField(th.primary, (v) => editTh("primary", v))));
+  P.appendChild(field("secondary", colorField(th.secondary, (v) => editTh("secondary", v))));
+  P.appendChild(field("font", sel(S.fonts, th.font || "montserrat_14", (v) => editTh("font", v))));
+  const h2 = document.createElement("h2"); h2.textContent = "Data (JSON)"; P.appendChild(h2);
+  const ta = document.createElement("textarea"); ta.value = JSON.stringify(spec.data || [], null, 1); ta.style.minHeight = "110px";
+  const ap = document.createElement("button"); ap.textContent = "Apply data";
+  ap.onclick = () => { try { const v = JSON.parse(ta.value); edit((n) => { n.data = v; }, "data"); } catch (e) { flash("data: " + e.message); } };
+  P.append(ta, ap);
+  const h3 = document.createElement("h2"); h3.textContent = "Spec name"; P.appendChild(h3);
+  P.appendChild(inp("text", spec.name, (v) => edit((n) => { n.name = v.trim(); }, "name")));
+}
+
+/* ------------------------------------------------------------------ edits */
+function renameRefs(n, oldId, newId) {
+  walk(n, (w) => {
+    if (!w.on) return;
+    Object.keys(w.on).forEach((ev) => {
+      const fix = (a) => (a && typeof a === "object" && a.goto === oldId) ? Object.assign({}, a, { goto: newId }) : a;
+      w.on[ev] = Array.isArray(w.on[ev]) ? w.on[ev].map(fix) : fix(w.on[ev]);
+    });
+  });
+}
+function renameSel(v) {
+  if (!v || v === selId) return;
+  const old = selId; selId = v;
+  edit((n) => { find(n, old).w.id = v; }, `rename ${old} -> ${v}`);
+}
+function renameScreen(v) {
+  const old = spec.screens[curScreen].id; if (!v || v === old) return;
+  edit((n) => { n.screens[curScreen].id = v; renameRefs(n, old, v); }, `rename screen ${old} -> ${v}`);
+}
+function move(d) {
+  edit((n) => { const h = find(n, selId); const j = h.i + d; if (j < 0 || j >= h.parent.children.length) return; const a = h.parent.children; [a[h.i], a[j]] = [a[j], a[h.i]]; }, `move ${selId}`);
+}
+function removeSel() {
+  if (!selId || spec.screens.some((s) => s.id === selId)) return;
+  const id = selId; selId = null;
+  edit((n) => { const h = find(n, id); h.parent.children.splice(h.i, 1); if (!h.parent.children.length && h.parent.type) delete h.parent.children; }, `delete ${id}`);
+}
+function duplicate() {
+  edit((n) => {
+    const h = find(n, selId); const c = clone(h.w);
+    const re = (w) => { w.id = uniqueId(n, w.id.replace(/_\d+$/, "")); allIdsCache.add(w.id); (w.children || []).forEach(re); };
+    const allIdsCache = allIds(n);
+    re(c); if (!h.parent.layout) { c.x = (c.x || 0) + 16; c.y = (c.y || 0) + 16; }
+    h.parent.children.splice(h.i + 1, 0, c); selId = c.id;
+  }, `duplicate ${selId}`);
+}
+function addWidget(type) {
+  edit((n) => {
+    const scr = n.screens[curScreen];
+    let parent = scr, at = null;
+    if (selId && selId !== scr.id) {
+      const h = find(n, selId);
+      if (h && KIDS.has(h.w.type) && h.scr.id === scr.id) parent = h.w;
+      else if (h && h.scr.id === scr.id) { parent = h.parent; at = h.i + 1; }
+    }
+    const w = Object.assign({ id: uniqueId(n, type), type }, clone(NEW_WIDGET[type]));
+    if (!parent.layout) { const k = (parent.children || []).length % 6; w.align = "center"; w.x = k * 16; w.y = k * 16; }
+    parent.children = parent.children || [];
+    if (at === null) parent.children.push(w); else parent.children.splice(at, 0, w);
+    selId = w.id;
+  }, "add " + type);
+}
+
+/* ------------------------------------------------------------------ drag / resize */
+function onDown(e) {
+  const handle = e.target.closest("[data-handle]");
+  const el = e.target.closest(".lv[data-id]");
+  if (!el && !handle) { selId = spec.screens[curScreen].id; render(); return; }
+  const id = handle ? handle.dataset.handle : el.dataset.id;
+  if (id !== selId && !handle) { selId = id; render(); }
+  const h = find(spec, id); if (!h) return;
+  const box = (window.__boxes || {})[id] || [0, 0, 0, 0];
+  dragging = { id, mode: handle ? "size" : "move", x0: e.clientX, y0: e.clientY, w: clone(h.w), box, flex: !!h.parent.layout, moved: false };
+  if (dragging.mode === "move" && dragging.flex) dragging = Object.assign(dragging, { mode: "none" });
+  e.preventDefault();
+}
+window.addEventListener("mousemove", (e) => {
+  if (!dragging || dragging.mode === "none") return;
+  const dx = Math.round((e.clientX - dragging.x0) / scale), dy = Math.round((e.clientY - dragging.y0) / scale);
+  if (!dragging.moved && Math.abs(dx) + Math.abs(dy) < 3) return;
+  dragging.moved = true;
+  const w = find(spec, dragging.id).w;
+  if (dragging.mode === "move") {
+    w.x = (dragging.w.x || 0) + dx; w.y = (dragging.w.y || 0) + dy;
+    if (!w.x) delete w.x; if (!w.y) delete w.y;
+  } else {
+    w.w = Math.max(4, dragging.box[2] + dx); w.h = Math.max(4, dragging.box[3] + dy);
+  }
+  renderCanvas();
+});
+window.addEventListener("mouseup", () => {
+  if (!dragging) return;
+  const d = dragging; dragging = null;
+  if (d.moved) commit(clone(spec), `${d.mode} ${d.id}`);
+});
+
+/* ------------------------------------------------------------------ chat + lint */
+function renderChat() {
+  const box = $("msgs"); const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.innerHTML = "";
+  (S.messages || []).forEach((m) => {
+    const d = document.createElement("div"); d.className = "msg " + m.who;
+    d.innerHTML = m.who === "system" ? esc(m.text) : `<span class="who">${m.who === "claude" ? "Claude Code" : "you"}${m.cmd ? " #" + m.cmd : ""}</span>${esc(m.text)}`;
+    box.appendChild(d);
+  });
+  if (atEnd) box.scrollTop = box.scrollHeight;
+  const q = (S.queue || []);
+  const now = Date.now() / 1000;
+  $("queue").innerHTML = q.map((x) => {
+    const age = Math.round(now - x.time);
+    const hint = x.status === "pending" && age > 20 ? " - is the Claude Code session listening? (ask it to run ui_ctl.py wait)" : "";
+    return `<div><span class="spin"></span> #${x.id} ${x.kind} ${x.status === "pending" ? "waiting for Claude Code" : "Claude Code is working"} (${age}s)${hint}` +
+      (x.status === "pending" ? ` <button data-cancel="${x.id}">cancel</button>` : "") + "</div>";
+  }).join("");
+  $("queue").querySelectorAll("[data-cancel]").forEach((b) => b.onclick = () => api("/api/cancel", { id: +b.dataset.cancel }));
+}
+function renderLint() {
+  const L = $("lint"); const parts = [];
+  (S.errors || []).forEach((e) => parts.push(`<div class="e">✖ ${esc(e)}</div>`));
+  (S.warnings || []).forEach((w) => parts.push(`<div class="w">⚠ ${esc(w)}</div>`));
+  if (S.device && S.device.layout) {
+    const b = window.__allBoxes || {}; let n = 0, worst = [];
+    Object.entries(S.device.layout).forEach(([id, d]) => { const e = b[id]; if (!e) return; n++; const off = Math.max(Math.abs(e[0] - d.x), Math.abs(e[1] - d.y), Math.abs(e[2] - d.w), Math.abs(e[3] - d.h)); if (off > 3) worst.push([off, id]); });
+    worst.sort((a, b) => b[0] - a[0]);
+    parts.push(`<div class="d">▢ device layout (${S.device.note || ""}): ${worst.length ? worst.length + " of " + n + " widgets differ from the editor by > 3 px - " + worst.slice(0, 6).map((x) => x[1] + " " + x[0] + "px").join(", ") : "editor matches the device within 3 px"}</div>`);
+  }
+  if (!parts.length) parts.push(`<div class="o">✔ spec valid, no warnings</div>`);
+  L.innerHTML = parts.join("");
+}
+
+/* ------------------------------------------------------------------ wiring */
+Object.keys(NEW_WIDGET).forEach((t) => {
+  const b = document.createElement("button"); b.textContent = "+ " + t; b.onclick = () => addWidget(t); $("palette").appendChild(b);
+});
+$("undo").onclick = () => api("/api/undo", {});
+$("redo").onclick = () => api("/api/redo", {});
+$("askBtn").onclick = async () => {
+  const text = $("askText").value.trim(); if (!text) return;
+  const r = await api("/api/ask", { text, selected: selId });
+  if (r.ok) $("askText").value = ""; else flash(r.error || "not sent");
+};
+$("askText").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("askBtn").click(); });
+$("submit").onclick = async () => {
+  if ((S.errors || []).length) return flash("Fix the errors before submitting.");
+  // the text in the Ask box (if any) goes along as the note, e.g. "only build, don't flash"
+  const note = $("askText").value.trim();
+  const r = await api("/api/submit", { note });
+  if (r.ok) $("askText").value = "";
+};
+window.addEventListener("keydown", (e) => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if (typing) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); $("undo").click(); }
+  else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) { e.preventDefault(); $("redo").click(); }
+  else if ((e.key === "Delete" || e.key === "Backspace") && selId) { e.preventDefault(); removeSel(); }
+  else if (e.key.startsWith("Arrow") && selId) {
+    const h = find(spec, selId); if (!h || h.parent.layout) return;
+    e.preventDefault(); const st = e.shiftKey ? 10 : 1;
+    const dx = e.key === "ArrowLeft" ? -st : e.key === "ArrowRight" ? st : 0, dy = e.key === "ArrowUp" ? -st : e.key === "ArrowDown" ? st : 0;
+    edit((n) => { const w = find(n, selId).w; w.x = (w.x || 0) + dx; w.y = (w.y || 0) + dy; if (!w.x) delete w.x; if (!w.y) delete w.y; }, `nudge ${selId}`);
+  }
+});
+window.addEventListener("resize", () => spec && renderCanvas());
+// boxes measured with a fallback font are wrong: redraw once Montserrat is in (and the spec)
+document.fonts && document.fonts.ready.then(() => { const t = setInterval(() => { if (spec) { clearInterval(t); renderCanvas(); } }, 100); });
+poll();
+</script>
+</body>
+</html>

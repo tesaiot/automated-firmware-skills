@@ -1,0 +1,5 @@
+ai-kit-board
+console
+i2c-scb5
+qwa309-pots
+qwa309-capsense

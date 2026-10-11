@@ -1,0 +1,1 @@
+QWA309 inputs: pots VR1..VR4 (SAR P15.4..P15.7) + CapSense buttons/slider (SCB5 @0x08), periodic report + change events (board tesaiot)

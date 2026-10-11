@@ -1,0 +1,36 @@
+{
+  "_doc": "Live view settings for this app (sensor-debug: sensor_dash.py --app <app>). Keys: see .claude/skills/sensor-debug/web/config.json. Knobs: POTS vr1..vr4 (raw 0..4095). CapSense: frame3 firmware -> CAPS btn0/btn1/slider; raw5 firmware (5-segment slider) -> CAPS touch/slider 0..100 + d0..d4 (drop per segment, counts). EVT lines (every change, 50 ms poll) go to the log. The bridge keeps the raw log (<app>/logs/liveview-*.log). Raw 4000T view: 'ezreport 200' -> FRAME (SDK 3-byte frame b0..b2 + SDK button decode sdk_btn0/1) and EZW w0..w22 (buffer words, unsigned).",
+  "title": "QWA309 inputs - knobs + CapSense",
+  "window_s": 60,
+  "quick": [
+    "ezreport 200",
+    "ezreport 0",
+    "report on",
+    "report off",
+    "caps",
+    "ezi2c 16",
+    "scan5",
+    "bus5",
+    "reinit",
+    "info",
+    "help"
+  ],
+  "units": {},
+  "skip_tags": [
+    "OK",
+    "ERR",
+    "INFO",
+    "READY",
+    "SCAN",
+    "BUS5",
+    "EVT",
+    "EZ",
+    "EZCHG"
+  ],
+  "order": [
+    "FRAME",
+    "CAPS",
+    "EZW",
+    "POTS"
+  ]
+}

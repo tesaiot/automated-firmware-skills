@@ -24,8 +24,8 @@
   ],
   "hw_settings": [
     "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)",
-    "DVP camera unplugged or CAM ON/OFF = OFF (camera RESET/PWDN hold P17.5/P17.7 low -> SW4/SW5 read pressed)"
+    "DVP camera unplugged, or CAM ON/OFF = ON (an unpowered camera, CAM OFF, clamps P17.5/P17.7 low -> SW5/SW6 read pressed; with CAM ON SW5 works, SW6/P17.7 still reads low)"
   ],
-  "verified": "2026-10-03/10 tesaiot: SW4/SW5 pull-up config read back; presses not seen (camera fitted)",
+  "verified": "2026-10-10 tesaiot, app qwa309-buttons (pin watch): silkscreen SW5 = P17.5 active low, works with CAM ON (press also resets the DVP camera - shared RESET net); SW6/P17.7 reads 0 constantly with the camera powered; QWA309 push buttons SW1/SW2 and DIP SW3/SW4 change no MCU GPIO (CS select ON or OFF)",
   "notes": "brought in automatically by board tesaiot (BOARD_COMPONENTS); P17.5 is also the USB-host VBUS enable"
 }

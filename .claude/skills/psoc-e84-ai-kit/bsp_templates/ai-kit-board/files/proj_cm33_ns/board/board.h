@@ -21,7 +21,10 @@
      * AI-Kit I/O from the BSP, plus the base-board buttons configured at run time. */
     #define BOARD_NAME          "tesaiot"
     #define BOARD_HAS_QWA309    (1)
-    #define BOARD_BTN_NAMES     "SW1", "SW4", "SW5"
+    /* btn1 = AI Kit SW1 (P7.0); btn2/btn3 = QWA309 rev1 silkscreen SW5 (P17.5, verified
+     * 2026-10-10) / SW6 (P17.7, from the photo - masked while the camera holds PWDN low).
+     * The SDK calls them SW4/SW5. The QWA309 also has push buttons SW1/SW2 - not on MCU GPIO. */
+    #define BOARD_BTN_NAMES     "SW1", "SW5", "SW6"
     #define BOARD_LED_NAMES     "LED1", "LED2", "RGB_RED", "RGB_BLUE", "RGB_GREEN"
 
 #elif defined(BOARD_KIT_PSE84_AI)

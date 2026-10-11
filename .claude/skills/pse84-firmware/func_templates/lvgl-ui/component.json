@@ -1,23 +1,27 @@
 {
   "id": "lvgl-ui",
   "layer": "func",
-  "status": "planned",
+  "status": "verified",
   "cores": [
     "cm55"
   ],
-  "summary": "LVGL 9.x UI on CM55 over display-dsi (all LVGL calls from one GFX task)",
+  "summary": "LVGL 9.5 on CM55, bare metal (LV_OS_NONE): display-dsi frame buffers (FULL mode, double buffered, stride 832), VG-Lite + software draw units, touch-ft5406 pointer, board55_millis tick; ui_init() / ui_poll()",
+  "api": "func/ui_port.h, func/lv_conf.h",
   "provides": [
     "lvgl-ui"
   ],
   "requires": {
     "components": [
       "display-dsi",
-      "freertos-cm55"
+      "touch-ft5406",
+      "cm55-board"
     ],
-    "parts": []
+    "parts": [
+      "display"
+    ]
   },
   "exec_models": [
-    "freertos"
+    "baremetal"
   ],
   "mtb_deps": {
     "proj_cm55": {
@@ -27,9 +31,90 @@
   "makefile": {
     "proj_cm55": {
       "DEFINES": [
-        "USE_KIT_PSE84_AI"
+        "LV_CONF_INCLUDE_SIMPLE"
+      ],
+      "CY_IGNORE": [
+        "$(SEARCH_lvgl)/tests",
+        "$(SEARCH_lvgl)/examples",
+        "$(SEARCH_lvgl)/demos",
+        "$(SEARCH_lvgl)/env_support",
+        "$(SEARCH_lvgl)/docs",
+        "$(SEARCH_lvgl)/scripts",
+        "$(SEARCH_lvgl)/src/drivers",
+        "$(SEARCH_lvgl)/src/debugging/test",
+        "$(SEARCH_lvgl)/src/debugging/vg_lite_tvg",
+        "$(SEARCH_lvgl)/src/debugging/monkey",
+        "$(SEARCH_lvgl)/src/draw/nxp",
+        "$(SEARCH_lvgl)/src/draw/renesas",
+        "$(SEARCH_lvgl)/src/draw/dma2d",
+        "$(SEARCH_lvgl)/src/draw/espressif",
+        "$(SEARCH_lvgl)/src/draw/eve",
+        "$(SEARCH_lvgl)/src/draw/nanovg",
+        "$(SEARCH_lvgl)/src/draw/nema_gfx",
+        "$(SEARCH_lvgl)/src/draw/opengles",
+        "$(SEARCH_lvgl)/src/draw/sdl",
+        "$(SEARCH_lvgl)/src/draw/convert/helium",
+        "$(SEARCH_lvgl)/src/draw/convert/neon",
+        "$(SEARCH_lvgl)/src/draw/sw/blend/helium",
+        "$(SEARCH_lvgl)/src/draw/sw/blend/neon",
+        "$(SEARCH_lvgl)/src/draw/sw/blend/arm2d",
+        "$(SEARCH_lvgl)/src/draw/sw/blend/riscv_v",
+        "$(SEARCH_lvgl)/src/libs/thorvg",
+        "$(SEARCH_lvgl)/src/libs/FT800-FT813",
+        "$(SEARCH_lvgl)/src/libs/frogfs",
+        "$(SEARCH_lvgl)/src/libs/gltf",
+        "$(SEARCH_lvgl)/src/libs/gstreamer",
+        "$(SEARCH_lvgl)/src/libs/libwebp",
+        "$(SEARCH_lvgl)/src/libs/nanovg",
+        "$(SEARCH_lvgl)/src/libs/svg",
+        "$(SEARCH_lvgl)/src/libs/vg_lite_driver",
+        "$(SEARCH_lvgl)/src/libs/ffmpeg",
+        "$(SEARCH_lvgl)/src/libs/freetype",
+        "$(SEARCH_lvgl)/src/libs/libjpeg_turbo",
+        "$(SEARCH_lvgl)/src/libs/libpng",
+        "$(SEARCH_lvgl)/src/libs/rlottie",
+        "$(SEARCH_lvgl)/src/libs/tiny_ttf",
+        "$(SEARCH_lvgl)/src/widgets/3dtexture",
+        "$(SEARCH_lvgl)/src/widgets/lottie",
+        "$(SEARCH_lvgl)/src/stdlib/micropython",
+        "$(SEARCH_lvgl)/src/stdlib/rtthread",
+        "$(SEARCH_lvgl)/src/stdlib/uefi"
+      ],
+      "LDFLAGS": [
+        "-Wl,--defsym=APP_MSP_STACK_SIZE=0x10000"
       ]
     }
   },
-  "source": "https://github.com/Infineon/mtb-example-psoc-edge-gfx-lvgl-demo"
+  "patches": [
+    {
+      "lib": "lvgl",
+      "file": "src/draw/vg_lite/lv_draw_vg_lite.c",
+      "find_re": "(switch\\(task->type\\) \\{\\r?\\n)        case LV_DRAW_TASK_TYPE_LETTER:\\r?\\n        case LV_DRAW_TASK_TYPE_LABEL:\\r?\\n",
+      "replace": "\\1        /* PSE84_SKILL_PATCH vg_lite_text: LETTER/LABEL left to the SW draw unit */\n",
+      "applied_re": "PSE84_SKILL_PATCH vg_lite_text",
+      "why": "VG-Lite bitmap-font drawing unreliable on PSOC Edge - text goes to the software unit",
+      "source": "own patch; behaviour as in Infineon mtb-example-psoc-edge-gfx-lvgl-demo (its lv_draw_vg_lite.c drops these cases)"
+    },
+    {
+      "lib": "lvgl",
+      "file": "src/draw/vg_lite/lv_vg_lite_utils.c",
+      "find_re": "\\(uint32_t\\)buffer->stride != stride\\) \\{",
+      "replace": "(uint32_t)buffer->stride < stride) { /* PSE84_SKILL_PATCH vg_lite_stride: padded rows OK */",
+      "applied_re": "PSE84_SKILL_PATCH vg_lite_stride",
+      "why": "display-dsi rows are padded (832 px stride for 800 px shown); upstream rejects any stride != width",
+      "source": "own patch; Infineon lvgl-demo removes the check entirely"
+    },
+    {
+      "lib": "lvgl",
+      "file": "src/draw/vg_lite/lv_vg_lite_decoder.c",
+      "find_re": "(lv_image_src_t src_type = lv_image_src_get_type\\(dsc->src\\);)",
+      "replace": "\\1 LV_UNUSED(src_type); /* PSE84_SKILL_PATCH vg_lite_unused: LV_USE_LOG 0 */",
+      "applied_re": "PSE84_SKILL_PATCH vg_lite_unused",
+      "why": "upstream 9.5 leaves src_type unused when LV_USE_LOG is 0 (-Wunused-variable)",
+      "source": "own patch"
+    }
+  ],
+  "source": "own code; LVGL 9.5.0 (MIT, upstream via mtb://lvgl); guidelines (read, never copied): Infineon mtb-example-psoc-edge-gfx-lvgl-demo v2.6.1, E84_TouchUI, TESAIoT SDK lv_port_*.c",
+  "notes": "text drawn in software, everything else may use VG-Lite; tiled images not patched (Infineon blits tiles - add if tiled images are used); LV_USE_LOG 0 (no UART on CM55); one context runs LVGL (main loop); CM55 main stack raised 4 KB -> 64 KB (LVGL runs on it in bare metal; Infineon's GFX task used 64 KB); lv_conf.h includes ui_conf.h when the app has one (ui-designer ui_gen.py: the fonts a generated UI uses); ui_stats().flushes counts frames handed to the display in flush_cb (2026-10-11: was counted in the flush-wait callback, which LVGL only calls at the next refresh - a static screen showed 0)",
+  "verified": "2026-10-11 tesaiot (second board, Waveshare 4.3\" DSI), app lvgl-demo (dual, bare metal both cores): serial_test 9/9 PASS (display/GPU/touch OK, display IRQs ~110/s, frames flushed, 0 timeouts); full 800x480 frame rendered in 6-7 ms with VG-Lite; user saw the UI correct; 3 taps -> 3 button clicks at (174,210); slider drag -> 100 at x=791 (mirroring correct); 2026-10-11 lvgl-ui-app (generated 2-screen UI, 19 widgets): serial_test 26/26 PASS"
 }

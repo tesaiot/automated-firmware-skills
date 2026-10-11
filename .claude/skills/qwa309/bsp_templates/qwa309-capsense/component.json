@@ -1,17 +1,18 @@
 {
   "id": "qwa309-capsense",
   "layer": "bsp",
-  "status": "planned",
+  "status": "built",
   "cores": [
     "cm33_ns"
   ],
-  "summary": "CapSense BTN0/BTN1 + slider: PSoC 4000T EZI2C @0x08 on SCB5, 3-byte read",
+  "summary": "CapSense on the QWA309 PSoC 4000T (EZI2C @0x08, SCB5): auto-detects the SDK 3-byte frame [btn0][btn1][slider] or the raw5 data block (5-segment slider raw counts, own baseline, centroid 0..100)",
   "provides": [
     "qwa309-capsense"
   ],
   "requires": {
     "components": [
-      "i2c-scb5"
+      "i2c-scb5",
+      "qwa309-board"
     ],
     "parts": [
       "capsense"
@@ -20,5 +21,12 @@
   "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/capsense/src/i2c_driver/capsense_i2c.c + api/capsense_protocol.h (ASCII or numeric bytes; baseline)",
   "hw_settings": [
     "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)"
-  ]
+  ],
+  "api": "board/qwa309_capsense.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "notes": "raw5: thresholds 350/200 counts on own baseline (idle noise +-30, touch 1500..5000, neighbours rise ~250); the block's own baseline words are not used (that firmware drags its baseline down during a touch). Do not touch the pads during init. The SDK reads CapSense from the CM55 that owns SCB5 - here i2c-scb5 (CM33_NS) owns SCB5, one owner core per app",
+  "verified": "2026-10-10 second tesaiot board (4000T with raw5 firmware), app qwa309-io: format auto-detected at boot (retry after E84 reset), slide left->right 0..100 in order, taps left/middle/right -> pos 0 / 47-50 / 100 with clean touch/release; raw5 firmware scans no buttons. frame3 path unverified (no board with that firmware). Our first board: 4000T never ACKs 0x08."
 }

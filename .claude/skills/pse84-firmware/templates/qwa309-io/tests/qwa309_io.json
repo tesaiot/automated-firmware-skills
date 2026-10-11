@@ -1,0 +1,134 @@
+{
+  "baud": 115200,
+  "boot": {
+    "expect": "READY",
+    "timeout": 120
+  },
+  "sync": {
+    "send": "info",
+    "expect": "READY"
+  },
+  "steps": [
+    {
+      "name": "info",
+      "send": "info",
+      "expect_re": [
+        "^INFO app=qwa309-io .*board=tesaiot"
+      ]
+    },
+    {
+      "name": "init pots",
+      "send": "info",
+      "expect_re": [
+        "^INFO .* pots=OK"
+      ]
+    },
+    {
+      "name": "init SCB5 + CapSense",
+      "send": "info",
+      "expect_re": [
+        "^INFO .* i2c5=OK pots=OK caps=OK capsfmt=(frame3|raw5)"
+      ]
+    },
+    {
+      "name": "SCB5 scan: CapSense",
+      "send": "scan5",
+      "expect_re": [
+        "^SCAN bus=i2c5 .*0x08"
+      ]
+    },
+    {
+      "name": "pots live",
+      "send": "pots",
+      "expect_re": [
+        "^POTS vr1=\\d+ vr2=\\d+ vr3=\\d+ vr4=\\d+ ready=1"
+      ]
+    },
+    {
+      "name": "caps frame",
+      "send": "caps",
+      "expect_re": [
+        "^CAPS (btn0=0 btn1=0 slider=\\d+ raw=\\d+,\\d+,\\d+ fmt=frame3|touch=0 slider=\\d+ d0=-?\\d+ .*fmt=raw5)"
+      ]
+    },
+    {
+      "name": "periodic report",
+      "expect_re": [
+        "^POTS ",
+        "^CAPS "
+      ],
+      "timeout": 2.5,
+      "pause": 0
+    },
+    {
+      "name": "turn VR1",
+      "interactive": true,
+      "prompt": "Turn the knob labelled VR1 from one end to the other",
+      "expect_re": [
+        "^EVT pot VR1 raw=\\d+ .*pin=P15\\.5"
+      ],
+      "timeout": 15
+    },
+    {
+      "name": "turn VR4",
+      "interactive": true,
+      "prompt": "Turn the knob labelled VR4",
+      "expect_re": [
+        "^EVT pot VR4 .*pin=P15\\.7"
+      ],
+      "timeout": 15
+    },
+    {
+      "name": "touch BTN0",
+      "interactive": true,
+      "prompt": "Touch and release the CapSense button BTN0",
+      "expect": [
+        "EVT caps btn0=pressed",
+        "EVT caps btn0=released"
+      ],
+      "timeout": 15,
+      "_note": "frame3 firmware only - a raw5 4000T (5-segment slider firmware) scans no buttons; skip on raw5"
+    },
+    {
+      "name": "touch BTN1",
+      "interactive": true,
+      "prompt": "Touch and release the CapSense button BTN1",
+      "expect": [
+        "EVT caps btn1=pressed",
+        "EVT caps btn1=released"
+      ],
+      "timeout": 15,
+      "_note": "frame3 firmware only - a raw5 4000T (5-segment slider firmware) scans no buttons; skip on raw5"
+    },
+    {
+      "name": "slide",
+      "interactive": true,
+      "prompt": "Slide a finger along the CapSense slider from the left end to the right end",
+      "expect_re": [
+        "^EVT caps slider=(touched pos=\\d+|\\d+)"
+      ],
+      "timeout": 15
+    },
+    {
+      "name": "report off",
+      "send": "report off",
+      "expect": [
+        "OK report=off"
+      ]
+    },
+    {
+      "name": "report on",
+      "send": "report on",
+      "expect": [
+        "OK report=on"
+      ]
+    },
+    {
+      "name": "console alive",
+      "send": "foo",
+      "expect": [
+        "ERR unknown command"
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "name": "TESAIoT QWA309 base board (only on board id 'tesaiot')",
   "parts": {
     "base-buttons": {
-      "label": "base-board buttons SW4/SW5 (P17.5/P17.7; rev1 silkscreen SW5/SW6)",
+      "label": "base-board buttons SW5/SW6 (P17.5/P17.7; SDK names SW4/SW5)",
       "keywords": [
         "\\bSW ?[456]\\b",
         "base[- ]?board button",
