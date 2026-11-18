@@ -1,0 +1,33 @@
+{
+  "_doc": "Regression cases for board_gate.py (run: board_gate.py selftest). hook = UserPromptSubmit verdict for a prompt (block | pass). check = parts found by 'check <board> <text>' (expect = exact sorted part ids) and the verdict (pass | blocked). Add a case for every false block / missed part you fix.",
+  "hook": [
+    {"prompt": "on the AI kit, make an LVGL screen with a slider and a touch button", "expect": "pass", "why": "display UI on the bare kit is valid (ui-designer)"},
+    {"prompt": "kit-pse84-ai: LVGL slider bound to level", "expect": "pass"},
+    {"prompt": "AI kit app that reads the 16x8 font table", "expect": "pass"},
+    {"prompt": "kit-pse84-ai: read the knob value from the radar config", "expect": "pass"},
+    {"prompt": "AI kit: play audio and set the volume", "expect": "pass"},
+    {"prompt": "AI kit: read the BMI270 and blink LED1", "expect": "pass"},
+    {"prompt": "kit-pse84-ai: read the capsense slider", "expect": "block"},
+    {"prompt": "AI kit: read the base board slider", "expect": "block"},
+    {"prompt": "kit-pse84-ai: read pots VR1..VR4", "expect": "block"},
+    {"prompt": "AI kit: show text on the 16x8 RGB LED matrix", "expect": "block"},
+    {"prompt": "PSOC Edge AI Kit: blink an LED on pin D3", "expect": "block"},
+    {"prompt": "kit-pse84-ai CAN bus demo", "expect": "block"},
+    {"prompt": "tesaiot: read the capsense slider and pots", "expect": "pass"},
+    {"prompt": "read pots and show them on the LED matrix", "expect": "pass", "why": "no board named: allowed, new_app.sh gates later"},
+    {"prompt": "kit-pse84-ai: read the capsense slider #board-ok", "expect": "pass"}
+  ],
+  "check": [
+    {"board": "tesaiot", "text": "use pin D3 as output", "expect": ["arduino-header"], "verdict": "pass"},
+    {"board": "tesaiot", "text": "D10 pin as chip select", "expect": ["arduino-header"], "verdict": "pass"},
+    {"board": "kit-pse84-ai", "text": "use pin D3 as output", "expect": ["arduino-header"], "verdict": "blocked"},
+    {"board": "kit-pse84-ai", "text": "LVGL screen with a slider and a touch button", "expect": [], "verdict": "pass"},
+    {"board": "kit-pse84-ai", "text": "capacitive touch buttons", "expect": ["capsense"], "verdict": "blocked"},
+    {"board": "tesaiot", "text": "base-board button SW5", "expect": ["base-buttons"], "verdict": "pass"},
+    {"board": "kit-pse84-ai", "text": "base-board push button on P17.5", "expect": ["base-buttons"], "verdict": "blocked", "why": "clean-room 2026-11-18: passed before"},
+    {"board": "kit-pse84-ai", "text": "toggle on the button on P17.7", "expect": ["base-buttons"], "verdict": "blocked"},
+    {"board": "kit-pse84-ai", "text": "SW1 user button toggles LED1", "expect": ["sw1"], "verdict": "pass"},
+    {"board": "kit-pse84-ai", "text": "DFR0522 led matrix", "expect": ["led-matrix"], "verdict": "blocked"},
+    {"board": "kit-pse84-ai", "text": "turn the base board knobs", "expect": ["pots", "qwa309"], "verdict": "blocked"}
+  ]
+}

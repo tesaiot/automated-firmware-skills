@@ -1,6 +1,6 @@
 ---
 name: qwa309
-description: Hardware pack for the TESAIoT QWA309 base board (TESAIoT Dev Kit = PSOC Edge E84 AI Kit on QWA309, board id tesaiot) - base-board parts (SW4/SW5, pots VR1..VR4, DFR0522 LED matrix, CapSense, Arduino/mikroBUS headers, CAN/RS-485, OPTIGA), their pin conflicts and the switch settings they need (CS select, CAM ON/OFF, CAN/RS-485). Use together with pse84-firmware when code or a request touches base-board parts, or when base-board I/O misbehaves. Not usable on the bare AI Kit (kit-pse84-ai).
+description: Hardware pack for the TESAIoT QWA309 base board (TESAIoT Dev Kit = PSOC Edge E84 AI Kit on QWA309, board id tesaiot) - base-board parts (buttons SW5/SW6 = SDK SW4/SW5, pots VR1..VR4, DFR0522 LED matrix, CapSense, Arduino/mikroBUS headers, CAN/RS-485, OPTIGA), their pin conflicts and the switch settings they need (CS select, CAM ON/OFF, CAN/RS-485). Use together with pse84-firmware when code or a request touches base-board parts, or when base-board I/O misbehaves. Not usable on the bare AI Kit (kit-pse84-ai).
 ---
 
 # QWA309 base board - TESAIoT Dev Kit pack
@@ -14,7 +14,17 @@ som `psoc-e84-ai-kit`). Board `tesaiot` = `BOARD_EXTENDS=kit-pse84-ai` + `BOARD_
 | board profile | `boards/tesaiot/board.env` |
 | pins, Arduino map, quirks, verification log | `boards/tesaiot/README.md` - the only pin source (never the rev1 pinout image) |
 | parts + prompt keywords + source symbols | `parts.json` (group `qwa309`) |
-| bsp components | `bsp_templates/`: `qwa309-board` (qwa309.h + SW4/SW5, built), planned `qwa309-pots`, `qwa309-led-matrix`, `qwa309-capsense`, `qwa309-can` |
+| bsp components | `bsp_templates/` (status = `components.py list --all`): CM33_NS `qwa309-board` (qwa309.h + SW5/SW6, built, auto for `tesaiot`), `qwa309-pots` (verified), `qwa309-capsense` (built, HW-checked on one board), `qwa309-led-matrix` (planned: driver written, not built yet), `qwa309-can` (planned); CM55 `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (planned: same files, for display/LVGL apps where CM55 owns SCB5) |
+| gate regression cases | `pse84-firmware/scripts/board_gate_cases.json` - run `board_gate.py selftest` after editing `parts.json` / `pack.json` |
+
+**Button names:** this pack uses the **rev1 silkscreen**: base-board push buttons **SW5 = P17.5,
+SW6 = P17.7** (verified 2026-10-10). The TESAIoT SDK calls them SW4/SW5 (older docs SW9/SW10); the
+`QWA309_SW4_*`/`QWA309_SW5_*` macros in `qwa309.h` keep the SDK names. QWA309 SW1/SW2 (push) and
+SW3/SW4 (DIP) reach no MCU pin we know of - ask, never guess.
+
+**SCB5 owner core:** CM33_NS apps use `i2c-scb5` + `qwa309-capsense` / `qwa309-led-matrix`; display
+/ LVGL apps own SCB5 on CM55 (`i2c-scb5-cm55`, touch + panel MCU) and use the `-cm55` variants on the
+same core. Mixing the two is BLOCKED (SCB5 claimed twice) until `scb5-lock` exists.
 
 ## Gates (enforced by the engine - relay them, never work around them)
 
@@ -31,8 +41,8 @@ som `psoc-e84-ai-kit`). Board `tesaiot` = `BOARD_EXTENDS=kit-pse84-ai` + `BOARD_
 
 | Part | Pins | Conflict / setting |
 | --- | --- | --- |
-| SW4 / SW5 | P17.5 / P17.7, active low, pull-up | = DVP camera RESET/PWDN: **camera unplugged or CAM OFF**, else they read pressed; P17.5 = USB-host VBUS enable. Older names SW9/SW10, SW5/SW6 |
-| base-board I2C parts (CapSense @0x08, LED matrix @0x10, OPTIGA @0x30) | SCB5 P17.0/P17.1, 3.3 V | **CS select = ON**; SCB5 is shared with display touch - one owner core or `scb5-lock` |
+| SW5 / SW6 (SDK: SW4 / SW5) | P17.5 / P17.7, active low, pull-up | = DVP camera RESET/PWDN: **camera unplugged, or CAM ON/OFF = ON**. CAM OFF (camera unpowered) clamps both low = read pressed; with CAM ON only SW5 works (SW6/P17.7 stays low) [HW 2026-10-10]. A SW5 press also resets the camera. P17.5 = USB-host VBUS enable |
+| base-board I2C parts (CapSense @0x08, LED matrix @0x10, OPTIGA @0x30) | SCB5 P17.0/P17.1, 3.3 V | **CS select = ON for CapSense** (LED matrix answered with either position); SCB5 is shared with display touch - one owner core (CM55 in display apps) or `scb5-lock` (planned). If CS ON holds SCB5 low, see `hw-troubleshooting` |
 | pots VR1..VR4 | P15.4..P15.7, SAR ch 4..7, 0-1.8 V | knob VR1 = P15.5, VR2 = P15.4 (map {5,4,6,7}); never feed 3.3 V/5 V |
 | CAN | P16.2 / P16.3 | camera data pins → camera off; **CAN/RS-485 switch = CAN** |
 | Arduino D2/D3 | P13.0 / P13.5 | outputs do not latch (erratum); A0-A3, VIN, AREF not connected |

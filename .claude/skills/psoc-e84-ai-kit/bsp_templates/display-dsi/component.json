@@ -50,8 +50,8 @@
     "GFXSS"
   ],
   "hw_settings": [
-    "Waveshare 4.3\" DSI panel on J10 (FPC); on the bare AI Kit also J16 (5 V + touch I2C, not fitted by default)",
-    "tesaiot: the panel MCU 0x45 and touch 0x38 share SCB5 with the QWA309 parts - if SCB5 is held low, set CS select OFF (hw-troubleshooting)"
+    "Waveshare 4.3\" DSI panel on J10 (FPC); bare AI Kit (kit-pse84-ai) only: also fit J16 (5 V + touch I2C, not fitted by default)",
+    "TESAIoT (tesaiot) only: the panel MCU 0x45 and touch 0x38 share SCB5 with the QWA309 parts - if SCB5 is held low, CS select OFF frees it (then the app cannot use CapSense; see hw-troubleshooting)"
   ],
   "source": "own code; guidelines (read, never copied - Infineon EULA: binary redistribution only): Infineon mtb-example-psoc-edge-gfx-lvgl-demo v2.6.1, E84_TouchUI (github.com/NnopponS/WheelSense_Project firmware/E84_TouchUI), TESAIoT SDK proj_cm55/gfxss_config.c + proj_cm33_ns/main.c",
   "notes": "BSP 1.4.0 has no gfxss block: config structs written in display.c, mipi_dsi_cfg from the Waveshare library; gfx_mem 0x1C4000 = 2 x 798720 B buffers + 253952 B VG-Lite heap (non-cacheable on CM55 via BSP MPU region); _BAREMETAL left at its default 1 (VG-Lite polls, no GPU NVIC handler); DC interrupt -> flag + 500 ms wait timeout; SCB5 bus clear + panel init retries (SDK warm/cold-boot findings)",

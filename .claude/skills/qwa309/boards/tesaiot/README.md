@@ -29,7 +29,7 @@ does not (it is the 3.3 V SCB5 bus). **Never feed 3.3 V/5 V into P15.x analog in
 
 | Function | Pins / bus | Notes |
 | --- | --- | --- |
-| **SW4 / SW5** | P17.5 / P17.7, active low, internal pull-up, debounce ≥ 50 ms | = DVP camera RESET/PWDN nets; P17.5 is also USB-host VBUS enable. Older names SW9/SW10 or **SW5/SW6** (the rev1 board photo shows SW5/SW6) |
+| **SW5 / SW6** (rev1 silkscreen; SDK SW4 / SW5, older SW9/SW10) | P17.5 / P17.7, active low, internal pull-up, debounce ≥ 50 ms | = DVP camera RESET/PWDN nets; P17.5 is also USB-host VBUS enable. SW5 = P17.5 **verified [HW] 2026-10-10** |
 | Pots VR1..VR4 | P15.4..P15.7 = SAR ch 4..7, 12-bit, 0-1.8 V | **physical VR1 = P15.5, VR2 = P15.4** (silkscreen swap): knob map `{5,4,6,7}` - **verified [HW] 2026-10-10**; full turn measured only 0..~1400-1800 counts (open) |
 | Header I2C (A4/A5) | SCB5 P17.1 SDA / P17.0 SCL, 3.3 V | shared: display touch, QWIIC, mikroBUS ×3, OPTIGA Trust M @0x30, CapSense @0x08, LED matrix @0x10. CM55 owns it in SDK firmware; no cross-core lock |
 | Header UART D0/D1 | **SCB9** P15.0 RX / P15.1 TX, 115200 | not the console |
@@ -62,13 +62,14 @@ board - CapSense is on SCB5, not SCB0.
 - **E84_TouchUI** (WheelSense project, TESA team; <https://github.com/NnopponS/WheelSense_Project/tree/prototype/tesaIoT-hackathon/firmware/E84_TouchUI>)
   targets the bare AI Kit (no QWA309 code). Its production app uses the **OV7675 DVP camera**
   (P16.0-P16.7 data, P17.2-P17.5/P17.7 control, P11.1 PCLK) and the display touch on SCB5 (CM55):
-  on a TESAIoT board that camera takes **SW4/SW5 (P17.5/P17.7)** and **CAN (P16.2/P16.3)**, and its
+  on a TESAIoT board that camera takes **SW5/SW6 (P17.5/P17.7)** and **CAN (P16.2/P16.3)**, and its
   touch shares SCB5 with the QWA309 I2C parts. Run it on TESAIoT only without the base-board buttons
   and CAN (the SDK's "DEC-A camera persona" switch does the opposite: camera off, pins to QWA309).
 
 ## Hardware quirks
 
-- DVP camera plugged in → SW4/SW5 read 0 permanently: unplug it (or try CAM OFF, untested).
+- DVP camera fitted → SW5/SW6 (P17.5/P17.7) read 0: unplug it, or set **CAM ON/OFF = ON** (frees
+  SW5 only; SW6/P17.7 stays low). CAM OFF (camera unpowered) clamps both low [HW 2026-10-10].
 - Display firmware needs a USB power cycle after flashing (debugger reset leaves the display dead).
 - The TESAIoT SDK (MTB 3.6, its own modified BSP 1.2.0) is **never used to build** here - this skill
   uses MTB 3.9 + vendor BSP 1.4.0. Its BSP delta (`modus_diff.py`) is a guideline for our own bsp

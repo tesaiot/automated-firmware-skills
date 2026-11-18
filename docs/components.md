@@ -53,7 +53,7 @@ Research 2026-10-10:
 | Component | Status | Core | Board parts | Built on (Infineon) | SDK guideline (read, rewrite) |
 | --- | --- | --- | --- | --- | --- |
 | `ai-kit-board` (board.h, bsp_status.h) | **verified** | CM33_NS | - | BSP aliases | - |
-| `qwa309-board` (qwa309.h, SW4/SW5; auto for `tesaiot`) | built | CM33_NS | base-buttons | - | `mod_qwa309_buttons.c` |
+| `qwa309-board` (qwa309.h, SW5/SW6 = SDK SW4/SW5; auto for `tesaiot`) | built | CM33_NS | base-buttons | - | `mod_qwa309_buttons.c` |
 | `cm55-board` (board55.h, bsp_status.h) | built | CM55 | - | BSP | - |
 | `i2c-scb0` (i2c_scb0.h) sensor bus 1.8 V | **verified** | CM33_NS | sensors | BSP `CYBSP_I2C_CONTROLLER` + `mtb_hal_i2c_setup`, ce:imu-bmi270-freertos | `common/mpy/sensor_i2c.c`: recovery, re-init rules |
 | `imu-bmi270` (imu_bmi270.h) @0x68 | **verified** | CM33_NS | sensors | `sensor-motion-bmi270` v1, ce:imu-bmi270-freertos | `sensor_bmi270.c` |
@@ -67,13 +67,15 @@ Research 2026-10-10:
 | `qspi-flash` (extflash.h) data area, option `flash_area` | planned | CM33_NS | memory | PDL SMIF + BSP memslot, ce:serial-flash-readwrite; areas from CE survey (fs-10mb = littlefs/emFile default) | - |
 | `psram` (psram.h) 16 MB octal | planned | CM33_NS | memory | PDL SMIF1, ce:psram-xip | - |
 | `radio-cyw55513` (radio.h) Wi-Fi 6 + BT 5.4 | planned | CM33_NS, FreeRTOS | wireless | `wifi-core-freertos-lwip-mbedtls` v3 (+WCM), btstack; ce:wifi-scan, btstack-findme | - |
-| `i2c-scb5` (i2c_scb5.h) header/display bus 3.3 V | planned | one owner | - | BSP `CYBSP_I2C_DISPLAY_CONTROLLER` | `ipc_scb5_lock.h` if shared |
+| `i2c-scb5` (i2c_scb5.h) header/display bus 3.3 V, master only | built | CM33_NS | - | BSP `CYBSP_I2C_CAM_CONTROLLER` | `ipc_scb5_lock.h` if shared |
+| `i2c-scb5-cm55` (same file) + SCB5 IRQ | **verified** | CM55 | - | same as `i2c-scb5` | owner in display apps (as in the SDK) |
 | `display-dsi` (display.h) GFXSS + 4.3" DSI + FT5406 | planned | CM55 | display | `display-dsi-waveshare-4-3-lcd`, `touch-ctp-ft5406`, ce:gfx-lvgl-demo (J16) | `gfxss_config.c`, `lv_port_indev.c` |
 | `camera-usb-uvc` (camera_uvc.h) kit USB camera on J2 | planned (licence) | CM55, FreeRTOS | camera | `emusb-host` (binary EULA, see exclusions), ce:ml-deepcraft-deploy-vision | - |
 | `led-rgb-pwm` (rgb_pwm.h) | planned (blocked by claims) | CM33_NS | leds | BSP `CYBSP_PWM_LED_CTRL` TCPWM0 | - |
-| `qwa309-pots` SAR ch4-7 | planned | CM33_NS | pots | PDL AutAnalog + design.modus overlay | `cm55_sensor_poll.c`, `mod_qwa309_pots.c` |
-| `qwa309-led-matrix` DFR0522 @0x10 | planned | CM33_NS | led-matrix | - | `dfr0522_rgb.c`: 5-byte cmds, shadow buffer |
-| `qwa309-capsense` PSoC 4000T @0x08 | planned | CM33_NS | capsense | - | `capsense_i2c.c`, `capsense_protocol.h` |
+| `qwa309-pots` SAR ch4-7 | **verified** | CM33_NS | pots | BSP 1.4.0 AutAnalog config re-targeted at run time (no overlay) | `cm55_sensor_poll.c`, `mod_qwa309_pots.c` |
+| `qwa309-led-matrix` DFR0522 @0x10 | planned (driver written, not built) | CM33_NS | led-matrix | - | `dfr0522_rgb.c`: 5-byte cmds, shadow buffer |
+| `qwa309-capsense` PSoC 4000T @0x08 | built (HW-checked, raw5 board) | CM33_NS | capsense | - | `capsense_i2c.c`, `capsense_protocol.h` |
+| `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (same files) | planned (not built) | CM55 | capsense, led-matrix | - | for display/LVGL apps where CM55 owns SCB5 |
 | `qwa309-can` CAN FD0 500 kbit/s | planned | CM33_NS | can-rs485 | PDL CANFD | `modcan.c`: bit timing |
 
 AI Kit bsp APIs (headers in each component's `files/`, conventions and order):

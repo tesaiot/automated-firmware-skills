@@ -20,13 +20,13 @@
   },
   "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/bento_libs/claw/common/capsense/src/i2c_driver/capsense_i2c.c + api/capsense_protocol.h (ASCII or numeric bytes; baseline)",
   "hw_settings": [
-    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)"
+    "QWA309 CS select switch = ON (powers/connects the CapSense PSoC 4000T side of SCB5; if CS ON holds SCB5 low on your board, CapSense cannot be used - see hw-troubleshooting)"
   ],
   "api": "board/qwa309_capsense.h",
   "exec_models": [
     "baremetal",
     "freertos"
   ],
-  "notes": "raw5: thresholds 350/200 counts on own baseline (idle noise +-30, touch 1500..5000, neighbours rise ~250); the block's own baseline words are not used (that firmware drags its baseline down during a touch). Do not touch the pads during init. The SDK reads CapSense from the CM55 that owns SCB5 - here i2c-scb5 (CM33_NS) owns SCB5, one owner core per app",
+  "notes": "raw5: thresholds 350/200 counts on own baseline (idle noise +-30, touch 1500..5000, neighbours rise ~250); the block's own baseline words are not used (that firmware drags its baseline down during a touch). Do not touch the pads during init. The SDK reads CapSense from the CM55 that owns SCB5 - here i2c-scb5 (CM33_NS) owns SCB5, one owner core per app; display/LVGL apps own SCB5 on CM55 - use qwa309-capsense-cm55 there. core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical",
   "verified": "2026-10-10 second tesaiot board (4000T with raw5 firmware), app qwa309-io: format auto-detected at boot (retry after E84 reset), slide left->right 0..100 in order, taps left/middle/right -> pos 0 / 47-50 / 100 with clean touch/release; raw5 firmware scans no buttons. frame3 path unverified (no board with that firmware). Our first board: 4000T never ACKs 0x08."
 }

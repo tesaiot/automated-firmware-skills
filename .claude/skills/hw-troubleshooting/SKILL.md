@@ -46,7 +46,7 @@ symptoms are already there.
 | what changes when the user does X | live view + `dash_ctl.py mark` + `scripts/phase_diff.py <raw.log> --tag ... --rest '^rest_'` | ignore counters (`--ignore EZW.w1,FRAME.b2`) |
 | send commands / read data while the page runs | `sensor-debug/scripts/dash_ctl.py cmd\|mark\|log` | |
 | back up a board before overwriting it | `pse84-firmware/scripts/backup.sh <board>` (+ `PSE84_PROBE_SERIAL=` for a second probe) | 12 MB SMIF dump -> `backup/` (acquire resets the chip, read-only) |
-| clone / restore / official firmware | `flash.sh <any-app> --yes --board <id> --hex <file>` | check the hex address ranges first; sha256 against the release |
+| clone / restore / official firmware | `flash.sh <any-app> --yes --board <id> --hex <file>` | check the hex address ranges first; sha256 against the release. `<any-app>` = a created app (needs `proj_cm33_s` + `bsps/` for the flash loader; no build): none left -> `new_app.sh <board> flash-host`; no bench file -> `discover.sh <board>` first |
 | run a script on the official MicroPython fw | `mpremote connect COMx resume fs cp x.py :x.py` then `mpremote connect COMx resume exec "import x"`; `fs rm :x.py` afterwards | `resume` is required (a soft reset drops back to the friendly REPL + TACP frame -> "could not enter raw repl"); `run x.py` of a ~5 KB script gives random SyntaxError/IndentationError although the bytes arrive intact - import from the fs instead. Ctrl-C via a plain serial write stops it after killing mpremote |
 | second board on the same PC | `fw-loader --device-list`, `PSE84_PROBE_SERIAL=<serial>` for flash/backup, `reg_peek.sh --serial` | its UART is another COM port - pass `--port` to the live view |
 

@@ -5,7 +5,7 @@
   "cores": [
     "cm33_ns"
   ],
-  "summary": "QWA309 base-board definitions (board/qwa309.h: pins, SAR map, header UART, I2C addresses) + compile-time board-scope gate; SW4/SW5 run-time pull-ups in ai-kit-board's board.c",
+  "summary": "QWA309 base-board definitions (board/qwa309.h: pins, SAR map, header UART, I2C addresses) + compile-time board-scope gate; SW5/SW6 (SDK SW4/SW5) run-time pull-ups in ai-kit-board's board.c",
   "provides": [
     "qwa309-defs",
     "base-buttons"
@@ -23,8 +23,7 @@
     "P17.7"
   ],
   "hw_settings": [
-    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)",
-    "DVP camera unplugged, or CAM ON/OFF = ON (an unpowered camera, CAM OFF, clamps P17.5/P17.7 low -> SW5/SW6 read pressed; with CAM ON SW5 works, SW6/P17.7 still reads low)"
+    "only if the app uses base-board buttons SW5/SW6 (P17.5/P17.7): DVP camera unplugged, or CAM ON/OFF = ON (CAM OFF clamps P17.5/P17.7 low -> both read pressed; with CAM ON SW5 works, SW6/P17.7 still reads low). CS select does not affect these pins"
   ],
   "verified": "2026-10-10 tesaiot, app qwa309-buttons (pin watch): silkscreen SW5 = P17.5 active low, works with CAM ON (press also resets the DVP camera - shared RESET net); SW6/P17.7 reads 0 constantly with the camera powered; QWA309 push buttons SW1/SW2 and DIP SW3/SW4 change no MCU GPIO (CS select ON or OFF)",
   "notes": "brought in automatically by board tesaiot (BOARD_COMPONENTS); P17.5 is also the USB-host VBUS enable"

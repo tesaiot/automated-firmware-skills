@@ -1,0 +1,35 @@
+{
+  "id": "qwa309-led-matrix-cm55",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "DFR0522 16x8 RGB LED matrix @0x10 driven from CM55, which owns SCB5 in display/LVGL apps - same driver as qwa309-led-matrix",
+  "provides": [
+    "qwa309-led-matrix"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb5-cm55",
+      "qwa309-board-cm55"
+    ],
+    "parts": [
+      "led-matrix"
+    ]
+  },
+  "claims": [],
+  "api": "board/qwa309_led_matrix.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "hw_settings": [
+    "QWA309 CS select: either position (the LED matrix @0x10 answered with CS select OFF, HW 2026-10-10); with ON, a clamping CapSense side can hold SCB5 low - then set OFF"
+  ],
+  "source": "copy of qwa309-led-matrix (core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical)",
+  "conflicts": [
+    "qwa309-led-matrix"
+  ],
+  "notes": "blocking calls on the caller's context; with LVGL call them from the UI loop (same core as touch)"
+}

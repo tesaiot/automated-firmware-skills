@@ -116,7 +116,7 @@ bsp_status_t capsense_init(void)
     {
         if (i > 0U)
         {
-            board_delay_ms(20U);    /* seen 2026-10-10: NODEV right after an E84 reset */
+            QWA309_DELAY_MS(20U);   /* seen 2026-10-10: NODEV right after an E84 reset */
         }
         s = read_bytes(b, RAW5_BYTES);
     }

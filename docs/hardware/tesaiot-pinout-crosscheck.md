@@ -41,8 +41,8 @@ and OPTIGA parts.
 
 1. Button silkscreen on QWA309 rev1: P17.5 = **SW5** verified 2026-10-10 (BOARD_BTN_NAMES updated); is
    P17.7 = SW6 (unplug the camera to test)? Where are push buttons SW1/SW2 wired - no MCU GPIO changes?
-2. Does **CAM OFF** release P17.5/P17.7 so the buttons work with the camera fitted? (2026-10-10:
-   CAM OFF does **not** free the SCB5 bus - SCL/SDA stay low; buttons not re-tested.)
+2. (answered 2026-10-10, `qwa309-buttons` pin watch - moved to the tesaiot board sheet: CAM OFF
+   clamps P17.5/P17.7 low; CAM ON frees SW5/P17.5 only; P17.7 stays low with the camera powered.)
 3. Is VIN connected on rev1 (image) or not (SDK schematic V3_P1)? Which revision is our board?
 4. Which SCB drives the header SPI on P9.0-P9.3?
 5. Header 2 pins labelled D16-D19 - what is really there on rev1?

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Board-scope gate: a board can only use the parts of the hardware packs it is made of. The bare
 PSOC Edge E84 AI Kit (board id kit-pse84-ai, pack psoc-e84-ai-kit) cannot reach the parts of the
-QWA309 base board (pack qwa309: pots, SW4/SW5, LED matrix, CapSense, headers, CAN, OPTIGA ...);
+QWA309 base board (pack qwa309: pots, SW5/SW6, LED matrix, CapSense, headers, CAN, OPTIGA ...);
 requests and apps that need them must target a board that has the base board (tesaiot).
 
 Data (scripts/packs.py): each pack's pack.json (kind, group, board names) + parts.json (parts,
@@ -18,6 +18,8 @@ Usage:
                                           board from <app>/pse84-app.env; also scans the app's
                                           sources (outside board/) for base-board symbols
   board_gate.py list <board-id>           parts this board has / lacks
+  board_gate.py selftest                  regression cases in board_gate_cases.json (run after
+                                          editing any pack.json / parts.json keyword)
 Gate lines: "GATE: PASS ..." (exit 0) or "GATE: BLOCKED ..." (exit 1). Hook mode always exits 0.
 """
 import json
@@ -147,6 +149,36 @@ def hook():
     return 0
 
 
+def hook_blocks(prompt):
+    """True when the prompt hook would block this prompt (same rules as hook())"""
+    if PROMPT["override"] in prompt or len(prompt) > PROMPT.get("max_prompt_chars", 1500):
+        return False
+    return any(blocked_by(prompt, b) for b in PACKS.values() if b.get("kind") == "baseboard")
+
+
+def selftest():
+    """regression cases in board_gate_cases.json: prompt-hook verdicts and parts found per text"""
+    cases = json.loads((Path(__file__).resolve().parent / "board_gate_cases.json").read_text(encoding="utf-8"))
+    fails = 0
+    for c in cases.get("hook", []):
+        got = "block" if hook_blocks(c["prompt"]) else "pass"
+        if got != c["expect"]:
+            fails += 1
+            print(f"FAIL hook  expect {c['expect']:5s} got {got:5s}: {c['prompt']}")
+    for c in cases.get("check", []):
+        hits = find_parts(c["text"])
+        ids = sorted(pid for _, pid, _ in hits)
+        have = board_groups(c["board"])
+        got = "pass" if all(g in have for g, _, _ in hits) else "blocked"
+        if ids != sorted(c["expect"]) or got != c["verdict"]:
+            fails += 1
+            print(f"FAIL check {c['board']}: '{c['text']}' expect {sorted(c['expect'])} {c['verdict']}, "
+                  f"got {ids} {got}")
+    total = len(cases.get("hook", [])) + len(cases.get("check", []))
+    print(f"SELFTEST: {'PASS' if not fails else 'FAIL'} {total - fails}/{total}")
+    return 1 if fails else 0
+
+
 def main(argv):
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
@@ -154,6 +186,8 @@ def main(argv):
     cmd, rest = argv[0], argv[1:]
     if cmd == "hook":
         return hook()
+    if cmd == "selftest":
+        return selftest()
     if cmd == "list" and rest:
         have = board_groups(rest[0])
         for gid, g in GROUPS.items():

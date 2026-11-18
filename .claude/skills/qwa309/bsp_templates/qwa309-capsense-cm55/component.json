@@ -1,0 +1,35 @@
+{
+  "id": "qwa309-capsense-cm55",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "CapSense on the QWA309 PSoC 4000T (EZI2C @0x08) read from CM55, which owns SCB5 in display/LVGL apps (as in the TESAIoT SDK) - same driver as qwa309-capsense",
+  "provides": [
+    "qwa309-capsense"
+  ],
+  "requires": {
+    "components": [
+      "i2c-scb5-cm55",
+      "qwa309-board-cm55"
+    ],
+    "parts": [
+      "capsense"
+    ]
+  },
+  "claims": [],
+  "api": "board/qwa309_capsense.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "hw_settings": [
+    "QWA309 CS select switch = ON (powers/connects the CapSense PSoC 4000T side of SCB5; if CS ON holds SCB5 low on your board, CapSense cannot be used - see hw-troubleshooting)"
+  ],
+  "source": "copy of qwa309-capsense (core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical)",
+  "conflicts": [
+    "qwa309-capsense"
+  ],
+  "notes": "SCB5 is claimed by i2c-scb5-cm55 (display touch + panel MCU on the same bus, same core, no lock needed). Hardware state of the 4000T varies per board - see the tesaiot board sheet"
+}

@@ -5,13 +5,14 @@
   "cores": [
     "cm33_ns"
   ],
-  "summary": "DFR0522 16x8 RGB LED matrix @0x10 on SCB5 (5-byte commands, shadow buffer)",
+  "summary": "DFR0522 16x8 RGB LED matrix @0x10 on SCB5 owned by CM33_NS (5-byte commands, shadow buffer, digits/bar/marquee helpers)",
   "provides": [
     "qwa309-led-matrix"
   ],
   "requires": {
     "components": [
-      "i2c-scb5"
+      "i2c-scb5",
+      "qwa309-board"
     ],
     "parts": [
       "led-matrix"
@@ -19,6 +20,13 @@
   },
   "guideline": "TESAIoT SDK (guideline only, never built): bento-firmware-template-mtb-only/proj_cm55/modules/dfr0522_rgb/dfr0522_rgb.c (02 FUNC COLOR X Y; send changed pixels only)",
   "hw_settings": [
-    "QWA309 CS select switch = ON (enables the base-board I2C; else buttons/CapSense are dead)"
-  ]
+    "QWA309 CS select: either position (the LED matrix @0x10 answered with CS select OFF, HW 2026-10-10); with ON, a clamping CapSense side can hold SCB5 low - then set OFF"
+  ],
+  "api": "board/qwa309_led_matrix.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "claims": [],
+  "notes": "SCB5 is claimed by i2c-scb5; blocking calls - under FreeRTOS use from one task. Display/LVGL apps own SCB5 on CM55: use qwa309-led-matrix-cm55 there. core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical"
 }

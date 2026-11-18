@@ -70,3 +70,4 @@ clean-room agent when a fix changed the workflow itself rather than only its wor
 | `prompts/_template.md` | prompt skeleton with the four parts |
 | `prompts/ui-designer.md` | the prompt used for ui-designer (thermostat app, headless editor loop) |
 | `reports/2026-10-11-ui-designer.md` | first run: all stages PASS, 9 findings triaged |
+| `prompts/qwa309.md`, `reports/2026-11-18-qwa309.md` | qwa309 pack + board gate (no MTB): 8 findings, 7 fixed, 1 feature open |

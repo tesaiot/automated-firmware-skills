@@ -3,7 +3,7 @@
 *
 * Layer 1 - board extras of the TESAIoT QWA309 base board (not in the AI-Kit
 * BSP). Include it ONLY from board/ code that drives a base-board part (pots,
-* SW4/SW5, header UART/SPI/GPIO, CAN, LED matrix, CapSense ...).
+* SW5/SW6, header UART/SPI/GPIO, CAN, LED matrix, CapSense ...).
 *
 * Board-scope gate (compile time): the bare PSOC Edge E84 AI Kit
 * (BOARD_KIT_PSE84_AI) cannot reach these parts - building such code for it
@@ -14,13 +14,31 @@
 #ifndef QWA309_H
 #define QWA309_H
 
-#include "board.h"
-
-#if !defined(BOARD_HAS_QWA309)
-#error "BOARD GATE: QWA309 base-board part used, but this app is not built for the TESAIoT Dev Kit (board id tesaiot). The bare PSOC Edge E84 AI Kit cannot reach base-board parts - re-create the app with: new_app.sh tesaiot <app>"
+/* Core-neutral: the same file ships for CM33_NS (qwa309-board, with board.h) and
+ * CM55 (qwa309-board-cm55, with board55.h) - keep both copies identical.
+ * new_app.sh passes -DBOARD_<ID> to both cores' Makefiles. */
+#if defined(__has_include)
+  #if __has_include("board.h")
+    #include "board.h"
+    #define QWA309_DELAY_MS(ms)     board_delay_ms(ms)
+  #elif __has_include("board55.h")
+    #include "board55.h"
+    #define QWA309_DELAY_MS(ms)     board55_delay_ms(ms)
+  #endif
+#else
+  #include "board.h"
+  #define QWA309_DELAY_MS(ms)       board_delay_ms(ms)
 #endif
 
-/* Buttons SW4 / SW5: active low, MCU pull-up, = DVP camera RESET / PWDN nets
+#if !defined(BOARD_HAS_QWA309) && !defined(BOARD_TESAIOT)
+#error "BOARD GATE: QWA309 base-board part used, but this app is not built for the TESAIoT Dev Kit (board id tesaiot). The bare PSOC Edge E84 AI Kit cannot reach base-board parts - re-create the app with: new_app.sh tesaiot <app>"
+#endif
+#if !defined(QWA309_DELAY_MS)
+#error "qwa309.h: neither board.h (ai-kit-board, CM33_NS) nor board55.h (cm55-board, CM55) is in this project"
+#endif
+
+/* Buttons SW5 / SW6 (rev1 silkscreen; the SDK and these macros say SW4 / SW5):
+ * active low, MCU pull-up, = DVP camera RESET / PWDN nets
  * (read "pressed" while the camera is fitted). P17.5 is also USB-host VBUS en. */
 #define QWA309_SW4_PORT_NUM     (17U)
 #define QWA309_SW4_PIN          (5U)

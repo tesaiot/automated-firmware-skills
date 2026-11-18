@@ -94,6 +94,10 @@ fi
 mkdir -p "$WS/.cache"
 TMPLOG="$WS/.cache/project-creator-$APP.log"
 
+# all gates passed - the rest needs ModusToolbox; stop with a clear message instead of a raw exec error
+[ -n "$MTB_TOOLS_DIR" ] && [ -x "$PROJECT_CREATOR" ] \
+  || die "ModusToolbox tools not found (project-creator-cli: '${PROJECT_CREATOR}') - run check_tools.sh, install ModusToolbox 3.9 (see reference/tools.md), then re-run. The gates above passed."
+
 if [ -n "$EXAMPLE" ]; then
   # 1+2. Infineon code example: resolve uri + pinned release from the manifest, clone via Project Creator
   case "$EXAMPLE" in mtb-*|avnet-*|kit-*|kit_*) ;; *) EXAMPLE="mtb-example-psoc-edge-$EXAMPLE";; esac

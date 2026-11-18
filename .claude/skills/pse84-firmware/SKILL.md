@@ -89,7 +89,7 @@ users (`BTN_LABELS`), never the macro name; say which board a button is on.
 ## Board-scope, pin-claim and hardware-setting gates
 
 The bare **PSOC Edge E84 AI Kit** (`kit-pse84-ai`) cannot reach the **QWA309 base-board** parts of
-the TESAIoT Dev Kit: SW4/SW5, pots VR1..VR4, LED matrix, CapSense, OPTIGA, Arduino/mikroBUS headers,
+the TESAIoT Dev Kit: SW5/SW6 (SDK SW4/SW5), pots VR1..VR4, LED matrix, CapSense, OPTIGA, Arduino/mikroBUS headers,
 CAN/RS-485. Only board id `tesaiot` has them (`BOARD_PARTS` in `board.env`; parts, keywords and
 source symbols in each pack's `parts.json`). Five checks enforce it - never work around one:
 
@@ -129,7 +129,11 @@ NVIC priority >= 2 (CM33) / >= 1 (CM55).
 - Each template lists the variants its `main.c` files implement in `scopes.txt`, one per line:
   `dual cm33_ns=freertos cm55=freertos`. `components.py variant` / `new_app.sh` pick the line
   matching `--scope`/`--model`; one fitting line = used automatically, several = `ACTION: CHOOSE
-  variant` - **ask the user** (console questions or the `web-wizard` form), none = refused.
+  variant` - **ask the user** (console questions or the `web-wizard` form), none = refused
+  (`BLOCKED template X implements only: ...`). Then tell the user which variants exist (`grep -H .
+  templates/*/scopes.txt`) and let them pick another template or variant - or extend a template
+  for the missing variant (developer work: new `main.c` + a `scopes.txt` line, then `cleanroom-test`).
+  Never silently switch the user's model.
 - `components.py` BLOCKS: no/two scopes, an application core without a model, a model or app/driver
   code on a parked core, `dual` without an IPC template (or `ipc-none`), a func/bsp component not
   tested under the chosen model (`exec_models`). `components.py scopes` prints the jobs.

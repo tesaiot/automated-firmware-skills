@@ -1,0 +1,26 @@
+{
+  "id": "qwa309-board-cm55",
+  "layer": "bsp",
+  "status": "planned",
+  "cores": [
+    "cm55"
+  ],
+  "summary": "QWA309 definitions on CM55 (board/qwa309.h, same file as qwa309-board: pins, I2C addresses, compile-time board-scope gate); no pins claimed",
+  "provides": [
+    "qwa309-defs-cm55"
+  ],
+  "requires": {
+    "components": [
+      "cm55-board"
+    ],
+    "parts": []
+  },
+  "claims": [],
+  "api": "board/qwa309.h",
+  "exec_models": [
+    "baremetal",
+    "freertos"
+  ],
+  "source": "copy of qwa309/bsp_templates/qwa309-board/files/proj_cm33_ns/board/qwa309.h (core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical)",
+  "notes": "pulled in by the CM55 base-board drivers; SW5/SW6 run-time setup stays on CM33_NS (qwa309-board)"
+}

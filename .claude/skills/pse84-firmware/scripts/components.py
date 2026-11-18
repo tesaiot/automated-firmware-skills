@@ -247,8 +247,12 @@ def hw_settings(sel):
 
 def gate(sel, errs, board, comps=None, opts=None):
     if errs:
-        for e in errs:
+        # board-scope errors first: they decide whether the rest matters at all
+        for e in sorted(errs, key=lambda e: 0 if "board '" in e else 1):
             print(f"COMPONENTS: BLOCKED {e}")
+        if any("is planned, not implemented yet" in e for e in errs):
+            print("ACTION: CHOOSE drop the planned component(s), or wait until they are built "
+                  "(--allow-planned is only for developers implementing them - never for a user app)")
         if any("board '" in e for e in errs):
             print("ACTION: CHOOSE use a board made with the needed pack (board_gate.py list <board>), "
                   "or drop that component")

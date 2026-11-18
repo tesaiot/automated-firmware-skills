@@ -5,7 +5,7 @@
   "cores": [
     "cm33_ns"
   ],
-  "summary": "board.h API on CM33_NS: init + CM55 start, 1 ms tick, LEDs, buttons (incl. QWA309 SW4/SW5 on tesaiot), console UART; qwa309.h = base-board pins + compile-time board-scope gate",
+  "summary": "board.h API on CM33_NS: init + CM55 start, 1 ms tick, LEDs, buttons (incl. QWA309 SW5/SW6 (SDK SW4/SW5) on tesaiot), console UART; qwa309.h = base-board pins + compile-time board-scope gate",
   "api": "board/board.h, board/bsp_status.h",
   "provides": [
     "board-api"

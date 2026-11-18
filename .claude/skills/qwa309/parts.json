@@ -6,21 +6,25 @@
       "label": "base-board buttons SW5/SW6 (P17.5/P17.7; SDK names SW4/SW5)",
       "keywords": [
         "\\bSW ?[456]\\b",
-        "base[- ]?board button",
+        "base[- ]?board (push ?)?buttons?",
+        "\\bP17[._]\\s*[57]\\b",
         "ปุ่ม(บน)?บอร์ด(ฐาน|เสริม)"
       ],
-      "symbols": []
+      "symbols": [
+        "QWA309_SW[45]_",
+        "\\bP17_[57]\\b"
+      ]
     },
     "pots": {
       "label": "potentiometers VR1..VR4 (P15.4..P15.7, SAR ch 4..7)",
       "keywords": [
         "\\bVR ?[1-4]\\b",
         "\\bpot(s|entiometers?)?\\b",
-        "\\bknobs?\\b",
+        "(base[- ]?board|qwa ?309) knobs?",
+        "\\bknobs? VR ?[1-4]\\b",
         "trimmer",
         "โพเทนชิโอ",
-        "ตัวต้านทานปรับค่า",
-        "วอลุ่ม"
+        "ตัวต้านทานปรับค่า"
       ],
       "symbols": [
         "CYBSP_POT_VR\\d"
@@ -31,8 +35,7 @@
       "keywords": [
         "led ?matrix",
         "dfr0522",
-        "16 ?x ?8",
-        "8 ?x ?16",
+        "(16 ?x ?8|8 ?x ?16) ?(rgb )?(led|matrix|display|panel)",
         "แอลอีดีเมทริกซ์",
         "LED เมทริกซ์"
       ],
@@ -45,9 +48,9 @@
       "label": "CapSense buttons BTN0/BTN1 + slider (PSoC 4000T @0x08)",
       "keywords": [
         "capsense",
-        "touch ?(button|slider)",
-        "\\bslider\\b",
         "psoc ?4000",
+        "cap(acitive)?[- ]?touch (button|slider|pad)s?",
+        "(base[- ]?board|qwa ?309) (touch buttons?|(touch )?sliders?)",
         "ปุ่มสัมผัส"
       ],
       "symbols": [
@@ -68,7 +71,7 @@
       "label": "Arduino headers D0-D13 / A4-A5 (P15.x, P13.x, P9.x via level shifters)",
       "keywords": [
         "arduino",
-        "\bpin ?D(1[0-3]|[0-9])\b|\bD(1[0-3]|[0-9]) ?pin",
+        "\\bpin ?D(1[0-3]|[0-9])\\b|\\bD(1[0-3]|[0-9]) ?pin",
         "header (uart|spi|gpio|pwm)",
         "\\bSCB ?9\\b",
         "\\bP1[35][._\\[]\\s*[0-7]"

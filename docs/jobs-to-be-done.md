@@ -15,11 +15,12 @@ and gets it built, flashed and tested on the board, with every pin coming from a
 ## Now - make the base board usable (hardware on the bench)
 
 1. **Resolve the pinout open questions** in
-   [hardware/tesaiot-pinout-crosscheck.md](hardware/tesaiot-pinout-crosscheck.md): button silkscreen
-   (SW4/SW5 vs SW5/SW6), whether CAM OFF frees P17.5/P17.7, VIN, and the SPI SCB. Get the QWA309
-   V3_P1 schematic PDF if possible.
-2. **Test SW4/SW5** with the camera off or unplugged and the CS select switch on → `button-led` PASS on
-   all three buttons; fix `BTN_LABELS`.
+   [hardware/tesaiot-pinout-crosscheck.md](hardware/tesaiot-pinout-crosscheck.md): SW6 = P17.7 (camera
+   unplugged), QWA309 SW1/SW2 + DIP SW3/SW4 wiring, VIN, and the SPI SCB. (Done 2026-10-10: rev1
+   silkscreen SW5 = P17.5; CAM OFF clamps P17.5/P17.7, CAM ON frees SW5 only.) Get the QWA309 V3_P1
+   schematic PDF if possible.
+2. **Test SW6 (P17.7)** with the camera unplugged and the CS select switch on → `button-led` PASS on
+   all three buttons (SW1, SW5, SW6; `BTN_LABELS` already use the rev1 silkscreen).
 3. **Publish a corrected pinout** (rev1 image v2) generated from `boards/tesaiot/README.md`, so the
    image and the skill can't drift apart.
 
@@ -69,12 +70,14 @@ README). Each: `.c` wrapping the Infineon library, test app + spec, 0-warning bu
 
 ## Next - QWA309 drivers (M2 board support)
 
-4. Pots: SAR ADC on P15.4-P15.7 with the `{5,4,6,7}` knob map → port the BSP delta (pot pins + SAR
-   channels) as a hash-checked `design.modus` overlay (`BSP_OVERLAY_MODUS` in `board.env`).
-5. Header I2C (SCB5) bring-up: scan → expect 0x08 CapSense, 0x10 LED matrix, 0x30 OPTIGA. Decide
-   which core owns SCB5 (the SDK gives it to CM55, with no lock).
+4. (done 2026-10-10) Pots: `qwa309-pots` verified - BSP SAR config re-targeted at run time, no
+   overlay needed. Open: full turn reaches only ~1400-1800 counts (sample time vs divider).
+5. Header I2C (SCB5): owner core decided - CM33_NS (`i2c-scb5`) in console apps, CM55
+   (`i2c-scb5-cm55`) in display/LVGL apps; base-board drivers exist for both cores. Left: build
+   `qwa309-led-matrix` (+ the `-cm55` variants) with MTB, test on the second board (0x10 answers),
+   promote them from planned; OPTIGA @0x30; `scb5-lock` only if one app needs SCB5 on both cores.
 6. On-board sensors on SCB0 (BMI270 0x68, DPS368 0x77, SHT40 0x44): `WHO_AM_I`-style tests.
-7. Templates: `pot-read`, `led-matrix`, `sensor-hub` (UART output + `tests/*.json`).
+7. Templates: `pot-read`, `led-matrix`, `sensor-hub` (UART output + `tests/*.json`). Clean-room 2026-11-18: no template offers `cm33 cm33_ns=freertos` with base-board parts (pots + LED matrix + SW5) - add that variant to the first of these; also `scb5-lock` if one app needs SCB5 on both cores.
 
 ## Later
 
