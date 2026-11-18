@@ -28,6 +28,19 @@ if [ "$(basename "$(dirname "$SKILL_DIR")")" = skills ] && \
   TEMPLATE_ROOT="$(cd "$SKILL_DIR/../../.." && pwd)"
   [ "$TEMPLATE_ROOT" = "$(cd "$HOME" && pwd)" ] && TEMPLATE_ROOT=""   # user-level skill
 fi
+# Per-PC settings (never committed): <project>/pse84.local.env, KEY=value lines for PSE84_WS,
+# PSE84_BACKUP_DIR, INFINEON_TOOLS_DIR, MTB_TOOLS_DIR ... e.g. PSE84_WS=D:/pse84-ws/apps to keep
+# apps, mtb_shared and builds out of a Dropbox/OneDrive project folder. Environment variables win.
+if [ -n "$TEMPLATE_ROOT" ] && [ -f "$TEMPLATE_ROOT/pse84.local.env" ]; then
+  while IFS='=' read -r _k _v; do
+    _k="${_k//[[:space:]]/}"; _v="${_v%$'\r'}"; _v="${_v%%#*}"; _v="${_v%"${_v##*[![:space:]]}"}"
+    case "$_k" in
+      PSE84_WS|PSE84_BACKUP_DIR|PSE84_BENCH_DIR|INFINEON_TOOLS_DIR|MTB_TOOLS_DIR|PROGTOOLS_DIR|GCC_DIR|EDGEPROTECT_DIR)
+        [ -z "${!_k}" ] && [ -n "$_v" ] && printf -v "$_k" '%s' "$(cygpath -u "$_v" 2>/dev/null || echo "$_v")" ;;
+    esac
+  done < "$TEMPLATE_ROOT/pse84.local.env"
+  unset _k _v
+fi
 if [ -z "$PSE84_WS" ]; then
   if [ -n "$TEMPLATE_ROOT" ]; then PSE84_WS="$TEMPLATE_ROOT/apps"; else PSE84_WS="$PWD/apps"; fi
 fi
@@ -35,17 +48,37 @@ PSE84_BACKUP_DIR="${PSE84_BACKUP_DIR:-$(dirname "$PSE84_WS")/backup}"
 # Bench instance files (probe serial, COM port of THIS PC's board) - written by discover.sh
 BENCH_DIR="${PSE84_BENCH_DIR:-$PSE84_WS/.bench}"
 
+# Install roots searched for ModusToolbox Setup packages, first match per package wins:
+#   $INFINEON_TOOLS_DIR (preset), $HOME/Infineon/Tools, then <drive>:/Infineon/Tools on every drive
+#   (Setup lets you pick e.g. D:\Infineon\Tools). Each package can still be preset on its own:
+#   MTB_TOOLS_DIR, PROGTOOLS_DIR, GCC_DIR (<ver>/gcc), EDGEPROTECT_DIR.
+_tool_roots() {
+  [ -n "$INFINEON_TOOLS_DIR" ] && echo "$INFINEON_TOOLS_DIR"
+  echo "$HOME/Infineon/Tools"
+  local l   # MSYS: drive mounts are not listed in /, so a /[a-z] glob finds nothing - test each letter
+  for l in c d e f g h i j k l m n o p q r s t u v w x y z; do
+    [ -d "/$l/Infineon/Tools" ] && echo "/$l/Infineon/Tools"
+  done
+}
+# newest match of <pattern> under the first root that has one
+_newest() {
+  local r hit
+  while read -r r; do
+    hit="$(ls -d "$r"/$1 2>/dev/null | sort -V | tail -1)"
+    [ -n "$hit" ] && { echo "${hit%/}"; return 0; }
+  done < <(_tool_roots)
+}
 # Newest installed ModusToolbox tools_X.Y unless MTB_TOOLS_DIR is preset
 if [ -z "$MTB_TOOLS_DIR" ]; then
   MTB_TOOLS_DIR="$(ls -d "$HOME"/ModusToolbox/tools_* 2>/dev/null | sort -V | tail -1)"
+  [ -n "$MTB_TOOLS_DIR" ] || MTB_TOOLS_DIR="$(_newest 'ModusToolbox/tools_*')"
 fi
-if [ -z "$PROGTOOLS_DIR" ]; then
-  PROGTOOLS_DIR="$(ls -d /c/Infineon/Tools/ModusToolboxProgtools-* "$HOME"/Infineon/Tools/ModusToolboxProgtools-* 2>/dev/null | sort -V | tail -1)"
+[ -n "$PROGTOOLS_DIR" ] || PROGTOOLS_DIR="$(_newest 'ModusToolboxProgtools-*')"
+if [ -z "$GCC_DIR" ]; then
+  GCC_DIR="$(_newest 'mtb-gcc-arm-eabi/*/')"
+  [ -d "$GCC_DIR/gcc/bin" ] && GCC_DIR="$GCC_DIR/gcc"   # Infineon installer layout: <ver>/gcc/bin
 fi
-GCC_DIR="$(ls -d "$HOME"/Infineon/Tools/mtb-gcc-arm-eabi/*/ /c/Infineon/Tools/mtb-gcc-arm-eabi/*/ 2>/dev/null | sort -V | tail -1)"
-GCC_DIR="${GCC_DIR%/}"
-[ -d "$GCC_DIR/gcc/bin" ] && GCC_DIR="$GCC_DIR/gcc"   # Infineon installer layout: <ver>/gcc/bin
-EDGEPROTECT_DIR="$(ls -d "$HOME"/Infineon/Tools/ModusToolbox-Edge-Protect-Security-Suite-* /c/Infineon/Tools/ModusToolbox-Edge-Protect-Security-Suite-* 2>/dev/null | sort -V | tail -1)"
+[ -n "$EDGEPROTECT_DIR" ] || EDGEPROTECT_DIR="$(_newest 'ModusToolbox-Edge-Protect-Security-Suite-*')"
 
 MODUS_BASH="$MTB_TOOLS_DIR/modus-shell/bin/bash.exe"
 PROJECT_CREATOR="$MTB_TOOLS_DIR/project-creator/project-creator-cli.exe"
@@ -123,7 +156,9 @@ load_board() {
 mtb_make() {
   local winapp; winapp="$(cygpath -m "$1")"; shift
   local tools; tools="$(cygpath -m "$MTB_TOOLS_DIR")"
-  "$MODUS_BASH" --login -c "cd \"\$(cygpath -u '$winapp')\" && make $* CY_TOOLS_PATHS='$tools'"
+  local gcc=""   # GCC outside the default ~/Infineon/Tools (e.g. D:\Infineon\Tools): tell make where it is
+  [ -n "$GCC_DIR" ] && gcc="CY_COMPILER_GCC_ARM_DIR='$(cygpath -m "$GCC_DIR")'"
+  "$MODUS_BASH" --login -c "cd \"\$(cygpath -u '$winapp')\" && make $* CY_TOOLS_PATHS='$tools' $gcc"
 }
 
 # find_console_port <probe_serial>: print the COM port of that KitProg3's USB-UART (or nothing)

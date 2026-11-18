@@ -1,7 +1,7 @@
 {
   "id": "qwa309-led-matrix",
   "layer": "bsp",
-  "status": "planned",
+  "status": "built",
   "cores": [
     "cm33_ns"
   ],
@@ -28,5 +28,6 @@
     "freertos"
   ],
   "claims": [],
-  "notes": "SCB5 is claimed by i2c-scb5; blocking calls - under FreeRTOS use from one task. Display/LVGL apps own SCB5 on CM55: use qwa309-led-matrix-cm55 there. core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical"
+  "notes": "SCB5 is claimed by i2c-scb5; blocking calls - under FreeRTOS use from one task. Display/LVGL apps own SCB5 on CM55: use qwa309-led-matrix-cm55 there. core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical",
+  "verified": "built 0-warning 2026-11-18 (MTB 3.9, GCC 14.2.1, vendor BSP 1.5.0) in app qwa309-io + qwa309-led-matrix (scope cm33 bare metal); not yet run on hardware"
 }

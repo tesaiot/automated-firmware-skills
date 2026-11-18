@@ -14,7 +14,7 @@ som `psoc-e84-ai-kit`). Board `tesaiot` = `BOARD_EXTENDS=kit-pse84-ai` + `BOARD_
 | board profile | `boards/tesaiot/board.env` |
 | pins, Arduino map, quirks, verification log | `boards/tesaiot/README.md` - the only pin source (never the rev1 pinout image) |
 | parts + prompt keywords + source symbols | `parts.json` (group `qwa309`) |
-| bsp components | `bsp_templates/` (status = `components.py list --all`): CM33_NS `qwa309-board` (qwa309.h + SW5/SW6, built, auto for `tesaiot`), `qwa309-pots` (verified), `qwa309-capsense` (built, HW-checked on one board), `qwa309-led-matrix` (planned: driver written, not built yet), `qwa309-can` (planned); CM55 `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (planned: same files, for display/LVGL apps where CM55 owns SCB5) |
+| bsp components | `bsp_templates/` (status = `components.py list --all`): CM33_NS `qwa309-board` (qwa309.h + SW5/SW6, built, auto for `tesaiot`), `qwa309-pots` (verified), `qwa309-capsense` (built, HW-checked on one board), `qwa309-led-matrix` (built 2026-11-18, not run on HW), `qwa309-can` (planned); CM55 `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (built 2026-11-18, not run on HW: same files, for display/LVGL apps where CM55 owns SCB5) |
 | gate regression cases | `pse84-firmware/scripts/board_gate_cases.json` - run `board_gate.py selftest` after editing `parts.json` / `pack.json` |
 
 **Button names:** this pack uses the **rev1 silkscreen**: base-board push buttons **SW5 = P17.5,

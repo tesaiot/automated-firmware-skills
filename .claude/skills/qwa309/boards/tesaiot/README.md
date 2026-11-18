@@ -211,3 +211,9 @@ board - CapSense is on SCB5, not SCB0.
 - 2026-10-11 generated UI (ui-designer, template `lvgl-ui-app`, app with 2 screens / 19 widgets) on the
   second board: tests/ui_app.json 26/26 PASS (uitree, data bindings, simulated clicks, screen goto);
   user confirmed the screens and touch on the panel.
+- 2026-11-18 toolchain move (build only, no board): tools in `D:\Infineon\Tools` (MTB 3.9,
+  Progtools 2.0, GCC 14.2.1, Edge Protect 2.4.0), apps outside Dropbox (`pse84.local.env`). Project
+  Creator pulled vendor BSP **1.5.0.1211** (profile pins 1.4.0 -> `WARN: BSP version differs`).
+  `hello-world` hex `c1022c5e...` BUILD PASS 0 warnings, signed; `lvgl-demo` + `qwa309-capsense-cm55`
+  + `qwa309-led-matrix-cm55` and `qwa309-io` + `qwa309-led-matrix` BUILD PASS 0 warnings. Not flashed:
+  BSP 1.5.0 and Progtools 2.0 still need a hardware run before the profile moves off 1.4.0.

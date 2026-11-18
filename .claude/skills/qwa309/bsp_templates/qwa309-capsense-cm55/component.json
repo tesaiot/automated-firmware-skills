@@ -1,7 +1,7 @@
 {
   "id": "qwa309-capsense-cm55",
   "layer": "bsp",
-  "status": "planned",
+  "status": "built",
   "cores": [
     "cm55"
   ],
@@ -31,5 +31,6 @@
   "conflicts": [
     "qwa309-capsense"
   ],
-  "notes": "SCB5 is claimed by i2c-scb5-cm55 (display touch + panel MCU on the same bus, same core, no lock needed). Hardware state of the 4000T varies per board - see the tesaiot board sheet"
+  "notes": "SCB5 is claimed by i2c-scb5-cm55 (display touch + panel MCU on the same bus, same core, no lock needed). Hardware state of the 4000T varies per board - see the tesaiot board sheet",
+  "verified": "built 0-warning 2026-11-18 (MTB 3.9, GCC 14.2.1, vendor BSP 1.5.0) in app lvgl-demo + qwa309-capsense-cm55 + qwa309-led-matrix-cm55 (scope dual bare metal); not yet run on hardware"
 }

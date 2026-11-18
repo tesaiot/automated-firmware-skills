@@ -11,8 +11,12 @@
 | Git, Python 3.10+, pyserial | any recent | PATH | template clone, tests |
 
 All come from **ModusToolbox Setup** (Infineon Developer Center) except git/python.
-Overrides: set `MTB_TOOLS_DIR`, `PROGTOOLS_DIR`, `PYTHON`, `PSE84_WS` (default apps folder)
-before running scripts.
+`env.sh` finds them in `~/ModusToolbox`, `~/Infineon/Tools` or `<drive>:\Infineon\Tools` on any
+drive (Setup's install-folder choice; verified 2026-11-18 with everything in `D:\Infineon\Tools`:
+MTB 3.9, Progtools 2.0, GCC 14.2.1, Edge Protect 2.4.0). `mtb_make` passes the found GCC to make as
+`CY_COMPILER_GCC_ARM_DIR`. Overrides: set `INFINEON_TOOLS_DIR` (root), or `MTB_TOOLS_DIR`,
+`PROGTOOLS_DIR`, `GCC_DIR`, `EDGEPROTECT_DIR` one by one, plus `PYTHON`, `PSE84_WS` (default apps
+folder), before running scripts.
 
 ## Folder path rules (checked first by check_tools.sh)
 

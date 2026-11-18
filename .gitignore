@@ -25,3 +25,6 @@ Thumbs.db
 # --- per-user Claude Code settings and handoff notes ---
 .claude/settings.local.json
 CLAUDE.local.md
+
+# per-PC pse84-firmware settings (workspace/tool paths)
+pse84.local.env

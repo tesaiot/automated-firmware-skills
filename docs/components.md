@@ -73,9 +73,9 @@ Research 2026-10-10:
 | `camera-usb-uvc` (camera_uvc.h) kit USB camera on J2 | planned (licence) | CM55, FreeRTOS | camera | `emusb-host` (binary EULA, see exclusions), ce:ml-deepcraft-deploy-vision | - |
 | `led-rgb-pwm` (rgb_pwm.h) | planned (blocked by claims) | CM33_NS | leds | BSP `CYBSP_PWM_LED_CTRL` TCPWM0 | - |
 | `qwa309-pots` SAR ch4-7 | **verified** | CM33_NS | pots | BSP 1.4.0 AutAnalog config re-targeted at run time (no overlay) | `cm55_sensor_poll.c`, `mod_qwa309_pots.c` |
-| `qwa309-led-matrix` DFR0522 @0x10 | planned (driver written, not built) | CM33_NS | led-matrix | - | `dfr0522_rgb.c`: 5-byte cmds, shadow buffer |
+| `qwa309-led-matrix` DFR0522 @0x10 | built (0 warnings 2026-11-18; not run on HW) | CM33_NS | led-matrix | - | `dfr0522_rgb.c`: 5-byte cmds, shadow buffer |
 | `qwa309-capsense` PSoC 4000T @0x08 | built (HW-checked, raw5 board) | CM33_NS | capsense | - | `capsense_i2c.c`, `capsense_protocol.h` |
-| `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (same files) | planned (not built) | CM55 | capsense, led-matrix | - | for display/LVGL apps where CM55 owns SCB5 |
+| `qwa309-board-cm55`, `qwa309-capsense-cm55`, `qwa309-led-matrix-cm55` (same files) | built (0 warnings 2026-11-18; not run on HW) | CM55 | capsense, led-matrix | - | for display/LVGL apps where CM55 owns SCB5 |
 | `qwa309-can` CAN FD0 500 kbit/s | planned | CM33_NS | can-rs485 | PDL CANFD | `modcan.c`: bit timing |
 
 AI Kit bsp APIs (headers in each component's `files/`, conventions and order):

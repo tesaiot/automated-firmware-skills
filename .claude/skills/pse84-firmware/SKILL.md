@@ -53,6 +53,11 @@ The apps workspace `$PSE84_WS` (default, override by setting it) depends on wher
 | `~/.claude/skills/pse84-firmware` (user skill) | `./apps` of the current directory | always |
 | anywhere else | `./apps` | never - move it to one of the two places above |
 
+Per-PC override without environment variables: `<project>/pse84.local.env` (gitignored), `KEY=value`
+lines, e.g. `PSE84_WS=D:/pse84-ws/apps` when the project sits in Dropbox/OneDrive (sync locks break
+Project Creator: `Failed to remove .../bsps`). Also accepts `INFINEON_TOOLS_DIR`, `MTB_TOOLS_DIR`,
+`PROGTOOLS_DIR`, `GCC_DIR`, `EDGEPROTECT_DIR`, `PSE84_BACKUP_DIR`. Environment variables win.
+
 Backups (`backup.sh`) go to `$PSE84_BACKUP_DIR` = the workspace's parent `/backup`.
 Installing from a copy of just `pse84-firmware/`: put it in one of the two `.claude/skills`
 places, keep LF line endings (`.gitattributes` enforces it in git), then Stage 1.

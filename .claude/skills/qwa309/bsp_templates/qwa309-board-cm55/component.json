@@ -1,7 +1,7 @@
 {
   "id": "qwa309-board-cm55",
   "layer": "bsp",
-  "status": "planned",
+  "status": "built",
   "cores": [
     "cm55"
   ],
@@ -22,5 +22,6 @@
     "freertos"
   ],
   "source": "copy of qwa309/bsp_templates/qwa309-board/files/proj_cm33_ns/board/qwa309.h (core-neutral source: keep proj_cm33_ns and proj_cm55 copies of this component's files identical)",
-  "notes": "pulled in by the CM55 base-board drivers; SW5/SW6 run-time setup stays on CM33_NS (qwa309-board)"
+  "notes": "pulled in by the CM55 base-board drivers; SW5/SW6 run-time setup stays on CM33_NS (qwa309-board)",
+  "verified": "built 0-warning 2026-11-18 (MTB 3.9, GCC 14.2.1, vendor BSP 1.5.0) in app lvgl-demo + qwa309-capsense-cm55 + qwa309-led-matrix-cm55 (scope dual bare metal); not yet run on hardware"
 }

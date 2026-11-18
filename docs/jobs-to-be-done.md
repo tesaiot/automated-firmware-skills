@@ -73,9 +73,10 @@ README). Each: `.c` wrapping the Infineon library, test app + spec, 0-warning bu
 4. (done 2026-10-10) Pots: `qwa309-pots` verified - BSP SAR config re-targeted at run time, no
    overlay needed. Open: full turn reaches only ~1400-1800 counts (sample time vs divider).
 5. Header I2C (SCB5): owner core decided - CM33_NS (`i2c-scb5`) in console apps, CM55
-   (`i2c-scb5-cm55`) in display/LVGL apps; base-board drivers exist for both cores. Left: build
-   `qwa309-led-matrix` (+ the `-cm55` variants) with MTB, test on the second board (0x10 answers),
-   promote them from planned; OPTIGA @0x30; `scb5-lock` only if one app needs SCB5 on both cores.
+   (`i2c-scb5-cm55`) in display/LVGL apps; base-board drivers exist for both cores. `qwa309-led-matrix`
+   and the `-cm55` variants built with 0 warnings 2026-11-18. Left: run them on the second board
+   (0x10 answers) and mark verified; OPTIGA @0x30; `scb5-lock` only if one app needs SCB5 on both
+   cores.
 6. On-board sensors on SCB0 (BMI270 0x68, DPS368 0x77, SHT40 0x44): `WHO_AM_I`-style tests.
 7. Templates: `pot-read`, `led-matrix`, `sensor-hub` (UART output + `tests/*.json`). Clean-room 2026-11-18: no template offers `cm33 cm33_ns=freertos` with base-board parts (pots + LED matrix + SW5) - add that variant to the first of these; also `scb5-lock` if one app needs SCB5 on both cores.
 
