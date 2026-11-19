@@ -217,3 +217,27 @@ board - CapSense is on SCB5, not SCB0.
   `hello-world` hex `c1022c5e...` BUILD PASS 0 warnings, signed; `lvgl-demo` + `qwa309-capsense-cm55`
   + `qwa309-led-matrix-cm55` and `qwa309-io` + `qwa309-led-matrix` BUILD PASS 0 warnings. Not flashed:
   BSP 1.5.0 and Progtools 2.0 still need a hardware run before the profile moves off 1.4.0.
+- 2026-11-19 first hardware run with the new tools (MTB 3.9 + Progtools 2.0 / OpenOCD 0.12.0+dev-5.20,
+  vendor BSP 1.5.0.1211, GCC 14.2.1, Edge Protect 2.4.0; workspace `D:\pse84-ws`): `discover.sh`
+  IDENTITY PASS (PSE846GPS2DBZC4A rev B0, KitProg3 FW 2.82.1735 reported outdated - not updated);
+  `tesaiot-demo` (hello-world) BUILD PASS 0 warnings, hex `c1022c5e...`; flash acquire check
+  life cycle DEVELOPMENT, FLASH PASS verified 72,892 bytes; serial_test RESULT PASS 9/9 (boot/sync,
+  board=tesaiot, info, hello x5, console alive). Board not backed up before flashing (user's choice).
+  Not yet re-run on BSP 1.5.0: blink, push-to-light, sensors, QWA309 drivers, display.
+- 2026-11-19 blink re-run (MTB 3.9, Progtools 2.0, vendor BSP 1.5.0.1211, GCC 14.2.1,
+  Edge Protect 2.4.0): `tesaiot-blink` BUILD PASS 0 warnings, signed combined hex SHA256
+  `b247077157260583680cd1e2ab6edbbe8cd40cc6705a195d29e0909ba2755b5c`.
+  Identity PASS, acquire life cycle DEVELOPMENT; FLASH PASS verified 73,076 bytes.
+  UART READY, `INFO app=blink v=1.0 board=tesaiot period_ms=500`, alternating `BLINK led1=1/0`;
+  RESULT PASS 6/6, visual step skipped (human observation pending). Evidence: app logs
+  `build-20261119-112353.log`, `flash-20261119-112505.log`; repository-local
+  `keepout/blink-test-20261119-1125.log`. This supersedes the earlier blink pending status.
+- 2026-11-19 bring-up demos, same board and tools (BSP 1.5.0.1211). `blink` hex `b2470771...` run at
+  10:55: RESULT PASS 6/6 and LED1 blinking **observed by a person** (the user). `push-to-light` hex
+  `afc934b1...`: FLASH PASS verified 74,380 bytes, auto RESULT 15/16 - all LED commands pass,
+  `btn?` at rest = `btn1=0 btn2=0 btn3=1` (SW6/P17.7 low: DVP camera fitted, CAM ON - known).
+  **Open:** interactive presses of SW1 (AI Kit, P7.0) and SW5 (P17.5) gave no `EVT` in 2x120 s
+  although the user pressed both; a 60 s `btn?` poll later read `btn1=0 btn2=1 btn3=1` throughout
+  (SW5 now low as with CAM OFF - switch state unconfirmed). No capture with a confirmed held button
+  yet; BSP 1.5.0 SW1 config (P7.0 pull-up, active low) equals 1.4.0. Next: positive-control capture
+  (hold SW1 while polling), then `pin-watch` / `reg_peek.sh gpio7` (hw-troubleshooting).

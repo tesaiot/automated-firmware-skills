@@ -78,14 +78,14 @@ def read_env(path):
 
 board = {}
 if args.board:
-    own = read_env(SKILL_DIR / "boards" / args.board / "board.env")
-    if own.get("BOARD_EXTENDS"):   # parent profile first, this board overrides it
-        board = read_env(SKILL_DIR / "boards" / own["BOARD_EXTENDS"] / "board.env")
-    board.update(own)
-    root = SKILL_DIR.parent.parent.parent
-    ws = Path(os.environ.get("PSE84_WS") or root / "apps")
-    bench = Path(os.environ.get("PSE84_BENCH_DIR") or ws / ".bench") / f"{args.board}.env"
-    board.update(read_env(bench))
+    # board profiles live in the hardware packs (BOARD_EXTENDS applied); the bench file in the
+    # workspace that env.sh uses (PSE84_WS from the environment or <project>/pse84.local.env)
+    sys.path.insert(0, str(SKILL_DIR / "scripts"))
+    import packs  # noqa: E402
+    if packs.board_dir(args.board) is None:
+        sys.exit(f"unknown board id '{args.board}' (known: {' '.join(packs.board_ids())})")
+    board = packs.board_env(args.board)
+    board.update(read_env(packs.bench_file(args.board)))
     if os.environ.get("PSE84_PROBE_SERIAL"):
         board["PROBE_SERIAL"] = os.environ["PSE84_PROBE_SERIAL"]
 labels = [s.strip() for s in board.get("BTN_LABELS", "").split(",") if s.strip()]

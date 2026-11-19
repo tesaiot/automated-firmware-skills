@@ -54,6 +54,65 @@ def groups():
     return out
 
 
+def read_env(path):
+    """KEY=value lines (quotes and trailing # comments stripped) -> dict; {} if missing"""
+    import re
+    vals = {}
+    p = Path(path) if path else None
+    if p and p.is_file():
+        for line in p.read_text(encoding="utf-8").splitlines():
+            m = re.match(r'\s*([A-Z_][A-Z0-9_]*)=("([^"]*)"|[^#\s]*)', line)
+            if m:
+                vals[m.group(1)] = m.group(3) if m.group(3) is not None else m.group(2)
+    return vals
+
+
+def _native(p):
+    """MSYS /d/x -> D:/x so Windows Python can open paths written for Git Bash"""
+    import re
+    m = re.match(r"^/([a-zA-Z])/(.*)$", p or "")
+    return f"{m.group(1).upper()}:/{m.group(2)}" if m and sys.platform == "win32" else p
+
+
+def local_settings():
+    """<project>/pse84.local.env (same per-PC file env.sh reads), environment variables win"""
+    import os
+    project = SKILLS.parent.parent if SKILLS.parent.name == ".claude" else None
+    vals = read_env(project / "pse84.local.env") if project else {}
+    for k in list(vals) + ["PSE84_WS", "PSE84_BENCH_DIR", "PSE84_BACKUP_DIR"]:
+        if os.environ.get(k):
+            vals[k] = os.environ[k]
+    return {k: _native(v) for k, v in vals.items()}, project
+
+
+def workspace():
+    """apps workspace, same rule as env.sh: PSE84_WS (env or pse84.local.env), else <project>/apps"""
+    s, project = local_settings()
+    return Path(s["PSE84_WS"]) if s.get("PSE84_WS") else (project or Path.cwd()) / "apps"
+
+
+def bench_file(board_id):
+    s, _ = local_settings()
+    return Path(s.get("PSE84_BENCH_DIR") or workspace() / ".bench") / f"{board_id}.env"
+
+
+def board_env(board_id):
+    """board profile with BOARD_EXTENDS parents applied (parent first, child overrides)"""
+    chain, bid, seen = [], board_id, set()
+    while bid and bid not in seen:
+        seen.add(bid)
+        d = board_dir(bid)
+        if d is None:
+            break
+        vals = read_env(d / "board.env")
+        chain.append(vals)
+        bid = vals.get("BOARD_EXTENDS")
+    env = {}
+    for vals in reversed(chain):
+        env.update(vals)
+    return env
+
+
 def component_roots(layer):
     """<layer>_templates folders: engine first, then packs"""
     roots = [ENGINE / f"{layer}_templates"] + [p["_dir"] / f"{layer}_templates" for p in packs().values()]

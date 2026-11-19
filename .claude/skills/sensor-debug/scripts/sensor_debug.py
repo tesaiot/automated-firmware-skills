@@ -47,8 +47,14 @@ SKIP_TAGS = {"OK", "ERR", "INFO", "READY", "SENSORS", "SCAN", "SELFTEST", "EVT"}
 
 # ---------------------------------------------------------------- serial plumbing
 def find_bench(board):
-    for base in [Path.cwd(), *Path.cwd().parents, SKILL.parent.parent.parent]:
-        f = base / "apps" / ".bench" / f"{board}.env"
+    sys.path.insert(0, str(SKILL.parent / "pse84-firmware" / "scripts"))
+    try:   # same workspace rule as env.sh (PSE84_WS / <project>/pse84.local.env)
+        import packs
+        first = [packs.bench_file(board)]
+    except ImportError:
+        first = []
+    for f in first + [base / "apps" / ".bench" / f"{board}.env"
+                      for base in [Path.cwd(), *Path.cwd().parents, SKILL.parent.parent.parent]]:
         if f.is_file():
             for line in f.read_text(encoding="utf-8").splitlines():
                 if line.startswith("CONSOLE_PORT="):
